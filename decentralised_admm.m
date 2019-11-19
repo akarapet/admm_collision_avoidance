@@ -17,7 +17,7 @@ nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*1;
+Q = eye(nu)*2;
 R = eye(nu)*1;
 
 
@@ -77,17 +77,22 @@ end
 
 % initial conditions
 
-x_1_0 = [1;2;0;0];
-x_2_0 = [-1;-2;0;0];
-x_3_0 = [-0.8;-1.6;0;0];
 
+x_0 = [1 -1 -0.8 ;
+       2 -2 -1.6 ; 
+       0  0    0 ;
+       0  0    0];
 
 %% Prediction
 
-constraints_1 = [];
-objective_1 = 0;
+
 
 for i = 1:M
+    
+    w_from_j_to_i = w_from_j((i-1)*N_j*nu+1:(i-1)*N_j*nu+nu*N_j,:);
+    
+    constraints_1 = [];
+    objective_1 = 0;
     
     for k = 1:N
         
@@ -98,17 +103,24 @@ for i = 1:M
         
         J_2 = rho * 0.5 * ((x{i,k}(1:nu) - w{i,k})'*(x{i,k}(1:nu) - w{i,k}));
        
-        %objective_1 = [objective_1, J, J_1,J_2];
         J_3 = 0;
         for j = 1:N_j
            
-            J_3 = J_3 + lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{i,k}(1:nu) - w_from_j((i-1)*(M-1)+j,k));
+            J_3 = J_3 + lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k)) ...
+                + rho * 0.5 * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k))' * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k));
             
         end
-    
+        
+        constraints_1 = [constraints_1, x{i,k+1} == A*x{i,k} + B*a{i,k}];
+        objective_1 = objective_1 + J + J_1 + J_2 + J_3;
     end
     
+    optimize([constraints_1, x{i,1} == x_0(:,i)],objective_1);
+    
 end
+
+
+%% Coordination
 
 
 

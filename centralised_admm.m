@@ -17,7 +17,7 @@ nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*1;
+Q = eye(nu)*2;
 R = eye(nu)*1;
 
 
