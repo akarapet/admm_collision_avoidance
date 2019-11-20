@@ -45,28 +45,35 @@ for i = 1:M
 
     % w and w_to_j
     w(i,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
-    for j = 1:(M-1)
-        w_to_j((i-1)*(M-1)+j,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
+    for j = 1:(M)
+        w_to_j((i-1)*(M)+j,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
     end
 end
 
     % w_from_j
-    w_from_j = zeros(M*(M-1)*nu,N+1);
+    w_from_j = zeros(M*(M)*nu,N+1);
 
     % lambda, lambda_to_j and lambda_from_j
     lambda = ones(M*nu,1) * 0.1;
-    lambda_to_j = ones(M*nu,M-1) * 0.1;
-    lambda_from_j = ones(M*nu,M-1) * 0.1;
+    lambda_to_j = ones(M*nu,M) * 0.1;
+    lambda_from_j = ones(M*nu,M) * 0.1;
     
 
 
 for k = 1:N
     
     %  populate nominal values
-    x_nominal{1,k} = ones(nx,1)*0.05;
-    x_nominal{2,k} = -0.01 * ones(nx,1);
-    x_nominal{3,k} = 0 * ones(nx,1);
+    w_nominal{1,k} = ones(nx,1)*0.05;
+    w_nominal{2,k} = -0.01 * ones(nx,1);
+    w_nominal{3,k} = 0 * ones(nx,1);
     
+    w_nominal{4,k} = ones(nx,1)*0.05;
+    w_nominal{5,k} = -0.01 * ones(nx,1);
+    w_nominal{6,k} = 0 * ones(nx,1);
+    
+    w_nominal{7,k} = ones(nx,1)*0.05;
+    w_nominal{8,k} = -0.01 * ones(nx,1);
+    w_nominal{9,k} = 0 * ones(nx,1);
     % initialise w
     
     w{1,k} = ones(nu,1)*0.1;
@@ -89,40 +96,73 @@ x_0 = [1 -1 -0.8 ;
 
 for i = 1:M
     
-    w_from_j_to_i = w_from_j((i-1)*N_j*nu+1:(i-1)*N_j*nu+nu*N_j,:);
+    w_from_j_to_i = w_from_j((i-1)*M*nu+1:(i-1)*M*nu+nu*M,:);
     
     constraints_1 = [];
     objective_1 = 0;
     
-    for k = 1:N
+     for k = 1:N
+         
+         J = (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu))'* Q * ...
+             (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu)) + a{i,k}'* R * a{i,k};
+         
+         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu)'* (x{i,k}(1:nu) - w{i,k});
+         
+         J_2 = rho * 0.5 * ((x{i,k}(1:nu) - w{i,k})'*(x{i,k}(1:nu) - w{i,k}));
         
-        J = (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu))'* Q * ...
-            (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu)) + a{i,k}'* R * a{i,k};
-        
-        J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu)'* (x{i,k}(1:nu) - w{i,k});
-        
-        J_2 = rho * 0.5 * ((x{i,k}(1:nu) - w{i,k})'*(x{i,k}(1:nu) - w{i,k}));
-       
-        J_3 = 0;
-        for j = 1:N_j
-           
-            J_3 = J_3 + lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k)) ...
-                + rho * 0.5 * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k))' * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k));
-            
-        end
-        
-        constraints_1 = [constraints_1, x{i,k+1} == A*x{i,k} + B*a{i,k}];
-        objective_1 = objective_1 + J + J_1 + J_2 + J_3;
-    end
-    
-    optimize([constraints_1, x{i,1} == x_0(:,i)],objective_1);
+         J_3 = 0;
+         for j = 1:M
+            if (i ~= j)
+             J_3 = J_3 + lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k)) ...
+                 + rho * 0.5 * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k))' * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k));
+            end 
+         end
+         
+         constraints_1 = [constraints_1, x{i,k+1} == A*x{i,k} + B*a{i,k}];
+         objective_1 = objective_1 + J + J_1 + J_2 + J_3;
+     end
+     
+     optimize([constraints_1, x{i,1} == x_0(:,i)],objective_1);
     
 end
 
-
+ 
 %% Coordination
-
-
+ 
+ 
+ for i = 1:M
+     
+     constraints_2 = [];
+     objective_2 = 0;
+     
+     for k = 1:N
+         
+         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu)'* (x{i,k}(1:nu) - w{i,k});
+         
+         J_2 = rho * 0.5 * ((x{i,k}(1:nu) - w{i,k})'*(x{i,k}(1:nu) - w{i,k}));
+         
+         J_3 = 0;
+         
+         for j = 1:N_j
+           if (i~=j)  
+             J_3 = J_3 + lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ...
+                 + rho * 0.5 * (x{j,k}(1:nu) - w_to_j{((i-1)*M+j),k})' * (x{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ; 
+ 
+            eta_ij = (w_nominal{i,k}(1:nu) - w_nominal{((i-1)*M+j),k}(1:nu)) * 1/norm(w_nominal{i,k}(1:nu) - w_nominal{((i-1)*M+j),k}(1:nu));
+            part_g = (w{i,k}(1:nu) - w_to_j{((i-1)*M+j),k}(1:nu)) - (w_nominal{i,k}(1:nu) - w_nominal{((i-1)*M+j),k}(1:nu)) - delta;
+            
+            constraints_2 = [constraints_2, eta_ij' * part_g >= 0];
+            
+           end
+         end
+                
+         objective_2 = objective_2 + J_1 + J_2 + J_3;
+    
+     end
+    
+     optimize(constraints_2,objective_2);
+    
+end
 
 
 %% Visualisation
