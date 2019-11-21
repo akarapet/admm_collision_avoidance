@@ -20,11 +20,13 @@ N = 100;
 Q = eye(nu)*2;
 R = eye(nu)*1;
 
+% Number of iterations
+it = 5;
 
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
-delta = 0.05; % Inter-agent distance 
-rho = 0.05;
+delta = 0.1; % Inter-agent distance 
+rho = 1;
 
 
 % initialize the states, reference, control and nominal states for each
@@ -54,18 +56,18 @@ end
     w_from_j = ones(M*(M)*nu,N+1);
 
     % lambda, lambda_to_j and lambda_from_j
-    lambda = ones(M*nu,N+1) * 0.01;
+    lambda = ones(M*nu,N+1) * 0.1;
 %   lambda_to_j = ones(M*nu,M) * 0.01;
 %   lambda_from_j = ones(M*nu,M) * 0.01;
-    lambda_to_j = ones(M*M*nu,N+1) * 0.01;
-    lambda_from_j = ones(M*M*nu,N+1) * 0.01;
+    lambda_to_j = ones(M*M*nu,N+1) * 0.1;
+    lambda_from_j = ones(M*M*nu,N+1) * 0.1;
 
 
 for k = 1:N
     
     %  populate nominal values
-    w_nominal{1,k} = ones(nu,1)*0.65;
-    w_nominal{2,k} = -0.21 * ones(nu,1);
+    w_nominal{1,k} = ones(nu,1)*0.05;
+    w_nominal{2,k} = -0.01 * ones(nu,1);
     w_nominal{3,k} = 0 * ones(nu,1);
     
     w_nominal{4,k} = ones(nu,1)*0.25;
@@ -77,8 +79,8 @@ for k = 1:N
     w_nominal{9,k} = 0 * ones(nu,1);
     % initialise w
     
-    w{1,k} = ones(nu,1)*0.1;
-    w{2,k} = -0.1 * ones(nu,1);
+    w{1,k} = ones(nu,1)*0.05;
+    w{2,k} = -0.01 * ones(nu,1);
     w{3,k} = 0 * ones(nu,1);
 
 end
@@ -91,11 +93,16 @@ x_0 = [1 -1 -0.8 ;
        0  0    0 ;
        0  0    0];
 
-for m = 1:10
+for m = 1:it
    
 %% Prediction
 
 for i = 1:M
+    
+    % ????
+    %x(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
+    %a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));
+    % ???
     
     w_from_j_to_i = w_from_j((i-1)*M*nu+1:(i-1)*M*nu+nu*M,:);
     
@@ -152,9 +159,6 @@ end
      
      % ?????
      w(i,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
-    for j = 1:(M)
-        w_to_j((i-1)*(M)+j,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
-    end
      % ????
      
      for k = 1:N
