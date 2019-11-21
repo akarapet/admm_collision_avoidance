@@ -5,7 +5,7 @@ yalmip('clear')
 clear all
 
 % Model data
-T = 0.1;
+T = 0.1; 
 A = [1 0 T 0;
      0 1 0 T;
      0 0 1 0;
@@ -24,7 +24,7 @@ R = eye(nu)*1;
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
 delta = 0.05; % Inter-agent distance 
-rho = 0.5;
+rho = 0.05;
 
 
 % initialize the states, reference, control and nominal states for each
@@ -51,21 +51,22 @@ for i = 1:M
 end
 
     % w_from_j
-    w_from_j = zeros(M*(M)*nu,N+1);
+    w_from_j = ones(M*(M)*nu,N+1);
 
     % lambda, lambda_to_j and lambda_from_j
-    lambda = ones(M*nu,1) * 0.01;
-    lambda_to_j = ones(M*nu,M) * 0.01;
-    lambda_from_j = ones(M*nu,M) * 0.01;
-    
+    lambda = ones(M*nu,N+1) * 0.01;
+%   lambda_to_j = ones(M*nu,M) * 0.01;
+%   lambda_from_j = ones(M*nu,M) * 0.01;
+    lambda_to_j = ones(M*M*nu,N+1) * 0.01;
+    lambda_from_j = ones(M*M*nu,N+1) * 0.01;
 
 
 for k = 1:N
     
     %  populate nominal values
-    w_nominal{1,k} = ones(nx,1)*0.65;
-    w_nominal{2,k} = -0.21 * ones(nx,1);
-    w_nominal{3,k} = 0 * ones(nx,1);
+    w_nominal{1,k} = ones(nu,1)*0.65;
+    w_nominal{2,k} = -0.21 * ones(nu,1);
+    w_nominal{3,k} = 0 * ones(nu,1);
     
     w_nominal{4,k} = ones(nu,1)*0.25;
     w_nominal{5,k} = -0.11 * ones(nu,1);
@@ -86,11 +87,11 @@ end
 
 
 x_0 = [1 -1 -0.8 ;
-       2 -2 -1.6 ; 
+       2  2 -1.6 ; 
        0  0    0 ;
        0  0    0];
 
-for m = 1:1  
+for m = 1:10
    
 %% Prediction
 
@@ -106,15 +107,18 @@ for i = 1:M
          J = (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu))'* Q * ...
              (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu)) + a{i,k}'* R * a{i,k};
          
-         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu)'* (x{i,k}(1:nu) - w{i,k});
+         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu,k)'* (x{i,k}(1:nu) - w{i,k});
          
          J_2 = rho * 0.5 * ((x{i,k}(1:nu) - w{i,k})'*(x{i,k}(1:nu) - w{i,k}));
         
          J_3 = 0;
          for j = 1:M
             if (i ~= j)
-             J_3 = J_3 + lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k)) ...
-                 + rho * 0.5 * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k))' * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k));
+%             J_3 = J_3 + lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k)) ...
+%                 + rho * 0.5 * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k))' * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k));
+              J_3 = J_3 + lambda_from_j((i-1)*M*nu+(j-1)*(nu)+1:(i-1)*M*nu+(j-1)*(nu)+nu,k)'* (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k)) ...
+                  + rho * 0.5 * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k))' * (x{i,k}(1:nu) - w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k));
+
             end 
          end
          
@@ -139,16 +143,23 @@ for i =1:M
 end
 
 %% Coordination
- 
+
 
  for i = 1:M
      
      constraints_2 = [];
      objective_2 = 0;
      
+     % ?????
+     w(i,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
+    for j = 1:(M)
+        w_to_j((i-1)*(M)+j,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
+    end
+     % ????
+     
      for k = 1:N
 
-         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu)' * (xc{i,k}(1:nu) - w{i,k});
+         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu,k)' * (xc{i,k}(1:nu) - w{i,k});
          
          J_2 = rho * 0.5 * ((xc{i,k}(1:nu) - w{i,k})' * (xc{i,k}(1:nu) - w{i,k}));
          
@@ -156,9 +167,10 @@ end
          
           for j = 1:M
             if (i~=j)  
-             J_3 = J_3 + lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ...
+%              J_3 = J_3 + lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)'* (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ...
+%                  + rho * 0.5 * (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k})' * (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ; 
+             J_3 = J_3 + lambda_to_j((i-1)*M*nu+(j-1)*(nu)+1:(i-1)*M*nu+(j-1)*(nu)+nu,k)'* (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ...
                  + rho * 0.5 * (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k})' * (xc{j,k}(1:nu) - w_to_j{((i-1)*M+j),k}) ; 
- 
              eta_ij = (w_nominal{(i-1)*M+i,k}(1:nu) - w_nominal{((i-1)*M+j),k}(1:nu)) * 1/norm(w_nominal{(i-1)*M+i,k}(1:nu) - w_nominal{((i-1)*M+j),k}(1:nu));
              part_g = (w{i,k}(1:nu) - w_to_j{((i-1)*M+j),k}(1:nu)) - (w_nominal{i,k}(1:nu) - w_nominal{((i-1)*M+j),k}(1:nu)) - delta;
             
@@ -167,14 +179,33 @@ end
             end
           end
                 
-         objective_2 = objective_2 + J_1 + J_2 + J_3;
+          objective_2 = objective_2 + J_1 + J_2 + J_3;
     
-     end
+      end
      
-     optimize([constraints_2],objective_2);
+      optimize(constraints_2,objective_2);
     
  end
 
+
+ % nominal update
+for i = 1:M 
+ 
+    for k = 1:N
+   
+        w_nominal{(i-1)*M+i,k}(1:nu) = w{i,k};
+        
+        for j = 1:M
+            if (i~=j)
+                
+               w_nominal{((i-1)*M+j),k}(1:nu) = w_to_j{((i-1)*M+j),k}(1:nu);
+                
+            end
+        end
+    
+    end
+    
+end
 
 %% Mediation
 
@@ -182,14 +213,17 @@ for i = 1:M
     
     for k = 1:N
     
-    lambda((i-1)*(nu)+1:(i-1)*(nu)+nu) = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu) + rho * (x{i,k}(1:nu) - w{i,k});
+    lambda((i-1)*(nu)+1:(i-1)*(nu)+nu,k) = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu,k) + rho * (x{i,k}(1:nu) - w{i,k});
     
-        for j = 1:M
-            if (i~=j)
-            lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j) = lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j) ...
-                + rho * (x{j,k}(1:nu) - w_to_j{((i-1)*M+j),k});
-            end
-        end
+         for j = 1:M
+             if (i~=j)
+%              lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j) = lambda_to_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j) ...
+%                  + rho * (x{j,k}(1:nu) - w_to_j{((i-1)*M+j),k});
+
+            lambda_to_j((i-1)*M*nu+(j-1)*(nu)+1:(i-1)*M*nu+(j-1)*(nu)+nu,k) = lambda_to_j((i-1)*M*nu+(j-1)*(nu)+1:(i-1)*M*nu+(j-1)*(nu)+nu,k) ...
+                 + rho * (x{j,k}(1:nu) - w_to_j{((i-1)*M+j),k});
+             end
+         end
     
     end
     
@@ -200,18 +234,19 @@ end
 
 for i = 1:M
     
-    w_from_j_to_i = w_from_j((i-1)*M*nu+1:(i-1)*M*nu+nu*M,:);
+   % w_from_j_to_i = w_from_j((i-1)*M*nu+1:(i-1)*M*nu+nu*M,:);
     
     for j = 1:M
         
         if (i~= j)
             
-            lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)= lambda_to_j((j-1)*(nu)+1:(j-1)*(nu)+nu,i);
+            %lambda_from_j((i-1)*(nu)+1:(i-1)*(nu)+nu,j)= lambda_to_j((j-1)*(nu)+1:(j-1)*(nu)+nu,i);
             
             for k = 1:N
                 
-                w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k) = w_to_j{(j-1)*nu+i,k};
-                
+              %  w_from_j_to_i((j-1)*(nu)+1:(j-1)*(nu)+nu,k) = w_to_j{(j-1)*nu+i,k};
+             lambda_from_j((i-1)*M*nu+(j-1)*(nu)+1:(i-1)*M*nu+(j-1)*(nu)+nu,k) = lambda_to_j((j-1)*M*nu+(i-1)*nu+1:(j-1)*M*nu+i*nu,k);
+              w_from_j((i-1)*M*nu+(j-1)*(nu)+1:(i-1)*M*nu+(j-1)*(nu)+nu,k) = w_to_j{(j-1)*M+i,k};
             end
         end
         
@@ -224,5 +259,5 @@ end
 %% Visualisation
 
 
-admm_visualise (r,x,N,T);
+%admm_visualise (r,x,N,T);
 
