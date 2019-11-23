@@ -21,11 +21,11 @@ Q = eye(nu)*2;
 R = eye(nu)*1;
 
 % Number of iterations
-it = 5;
+it = 2 ;
 
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
-delta = 0.1; % Inter-agent distance 
+delta = 0.2; % Inter-agent distance 
 rho = 1;
 
 
@@ -38,8 +38,8 @@ for i = 1:M
     a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));
     
     % position reference setpoint
-    r{i} = sdpvar(nu*N,1);
-    r{i} = ones(nu*N,1)*1;
+    %r{i} = sdpvar(nu*N,1);
+    r{i} = ones(nu*N,1)*0;
     
     % nominal position 
     %w_nominal(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
@@ -62,26 +62,27 @@ end
     lambda_to_j = ones(M*M*nu,N+1) * 0.1;
     lambda_from_j = ones(M*M*nu,N+1) * 0.1;
 
+wc = cell(M,N);
 
 for k = 1:N
     
     %  populate nominal values
-    w_nominal{1,k} = ones(nu,1)*0.05;
-    w_nominal{2,k} = -0.01 * ones(nu,1);
-    w_nominal{3,k} = 0 * ones(nu,1);
+    w_nominal{1,k} = ones(nu,1)*0.45;
+    w_nominal{2,k} = 0 * ones(nu,1);
+    w_nominal{3,k} = -0.03 * ones(nu,1);
     
-    w_nominal{4,k} = ones(nu,1)*0.25;
-    w_nominal{5,k} = -0.11 * ones(nu,1);
-    w_nominal{6,k} = 0.4 * ones(nu,1);
+    w_nominal{4,k} = ones(nu,1)*0.45;
+    w_nominal{5,k} = 0 * ones(nu,1);
+    w_nominal{6,k} = -0.03 * ones(nu,1);
     
-    w_nominal{7,k} = ones(nu,1)*0.35;
-    w_nominal{8,k} = 0.71 * ones(nu,1);
-    w_nominal{9,k} = 0 * ones(nu,1);
+    w_nominal{7,k} = ones(nu,1)*0.45;
+    w_nominal{8,k} = 0 * ones(nu,1);
+    w_nominal{9,k} = -0.03 * ones(nu,1);
     % initialise w
     
-    w{1,k} = ones(nu,1)*0.05;
-    w{2,k} = -0.01 * ones(nu,1);
-    w{3,k} = 0 * ones(nu,1);
+    wc{1,k} = ones(nu,1)*0;
+    wc{2,k} = 0.0 * ones(nu,1);
+    wc{3,k} = -0.0 * ones(nu,1);
 
 end
 
@@ -96,6 +97,9 @@ x_0 = [1 -1 -0.8 ;
 for m = 1:it
    
 %% Prediction
+
+
+
 
 for i = 1:M
     
@@ -114,9 +118,9 @@ for i = 1:M
          J = (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu))'* Q * ...
              (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu)) + a{i,k}'* R * a{i,k};
          
-         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu,k)'* (x{i,k}(1:nu) - w{i,k});
+         J_1 = lambda((i-1)*(nu)+1:(i-1)*(nu)+nu,k)'* (x{i,k}(1:nu) - wc{i,k});
          
-         J_2 = rho * 0.5 * ((x{i,k}(1:nu) - w{i,k})'*(x{i,k}(1:nu) - w{i,k}));
+         J_2 = rho * 0.5 * ((x{i,k}(1:nu) - wc{i,k})'*(x{i,k}(1:nu) - wc{i,k}));
         
          J_3 = 0;
          for j = 1:M
@@ -158,7 +162,7 @@ end
      objective_2 = 0;
      
      % ?????
-     w(i,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
+      w(i,:) = sdpvar(repmat(nu,1,N+1),repmat(1,1,N+1));
      % ????
      
      for k = 1:N
@@ -192,7 +196,7 @@ end
  end
 
 
- % nominal update
+% nominal update
 for i = 1:M 
  
     for k = 1:N
@@ -209,6 +213,16 @@ for i = 1:M
     
     end
     
+end
+
+% make w constant
+
+for i =1:M
+    for k = 1:N
+       
+        wc{i,k} = value(w{i,k});
+        
+    end  
 end
 
 %% Mediation
@@ -263,5 +277,5 @@ end
 %% Visualisation
 
 
-%admm_visualise (r,x,N,T);
+admm_visualise (r,x,N,T);
 
