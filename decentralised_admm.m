@@ -21,7 +21,7 @@ Q = eye(nu)*2;
 R = eye(nu)*1;
 
 % Number of iterations
-it = 2 ;
+it = 3 ;
 
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
@@ -89,8 +89,8 @@ end
 % initial conditions
 
 
-x_0 = [1 -1 -0.8 ;
-       2  2 -1.6 ; 
+x_0 = [1 -1 -1 ;
+       2  2 -2 ; 
        0  0    0 ;
        0  0    0];
 
@@ -274,8 +274,9 @@ end
 
 m
 end
+
 %% Visualisation
 
 
-admm_visualise (r,x,N,T);
+admm_visualise (r,w,N,T);
 

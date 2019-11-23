@@ -62,6 +62,7 @@ for m = 1:3
 for k = 1:N
    
     
+    x_nominal{i,k}
     for i = 1:M
         
         objective = objective + (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu))'* Q * ...
@@ -71,7 +72,7 @@ for k = 1:N
         
         for j = 1:M
         
-            if(i~=j && k > 2)
+            if(i~=j && k > 2 )
                 
               eta_ij = (x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu)) * 1/norm(x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu));
               part_g = (x{i,k}(1:nu) - x{j,k}(1:nu)) - (x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu)) - delta;  
