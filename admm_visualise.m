@@ -20,8 +20,8 @@ pause on
 for k = 1:(N+1)
     
     % reference 
-%plot(r{1}(1),r{1}(2),'kx')
- plot(r(1),r(2),'kx')
+plot(r{1}(1),r{1}(2),'kx')
+%plot(r(1),r(2),'kx')
 hold on
 
 % initial point

@@ -21,8 +21,8 @@ Q = eye(nu)*2;
 R = eye(nu)*1;
 
 
-M = 3; % Number of agents
-delta = 0.05; % Inter-agent distance 
+M = 2; % Number of agents
+delta = 0.01; % Inter-agent distance 
  
 % initialize the states, reference, control and nominal states
 for i = 1:M
@@ -30,7 +30,7 @@ for i = 1:M
     x(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
     a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));
     %r{i} = sdpvar(nu*N,1);
-    r{i} = ones(nu*N,1)*1;
+    r{i} = ones(nu*N,1)*0;
     x_nominal(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
     
 end
@@ -39,10 +39,13 @@ end
 %  populate nominal values
 for k = 1:N
 
-    x_nominal{1,k} = ones(nx,1)*0.05;
-    x_nominal{2,k} = -0.01 * ones(nx,1);
-    x_nominal{3,k} = 0 * ones(nx,1);
+%     x_nominal{1,k} = ones(nx,1)*0.05;
+%     x_nominal{2,k} = -0.01 * ones(nx,1);
+%     x_nominal{3,k} = 0 * ones(nx,1);
 
+    x_nominal{1,k} = ones(nx,1)*0.1;
+    x_nominal{2,k} = -0.2 * ones(nx,1);
+   
 end
 
 % initial conditions
@@ -53,16 +56,15 @@ x_3_0 = [-0.8;-1;0;0];
 
 
 %% Definition
-
+for m = 1:10
 constraints = [];
 objective = 0;
 
-for m = 1:3
+
 
 for k = 1:N
    
-    
-    x_nominal{i,k}
+   
     for i = 1:M
         
         objective = objective + (x{i,k}(1:nu) - r{i}((k-1)*nu+1:(k-1)*nu+nu))'* Q * ...
@@ -92,7 +94,8 @@ end
 %solve = optimizer([constraints, x{1} == [1;1;0;0],x{11} == [-1;-1;0;0] ],objective,[],x_nominal,x);
 
 
-    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0 ],objective);
+    %optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0 ],objective);
+    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0 ],objective);
     %x = solve(x_nominal);
     for k = 1:N*M
         x_nominal{k}(1:nu) = x{k}(1:nu);
@@ -104,8 +107,8 @@ end
 
 %% Visualisation
 
-admm_visualise (r,x,N,T);
-
+%admm_visualise (r,x,N,T);
+admm_visualise_2([0;0],x,N,T);
 
 
 
