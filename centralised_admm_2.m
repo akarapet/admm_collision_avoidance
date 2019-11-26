@@ -17,8 +17,8 @@ nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*150;
-R = eye(nu)*1;
+Q = eye(nu)*1500;
+R = eye(nu)*100;
 
 
 M = 3; % Number of agents
@@ -36,7 +36,7 @@ for i = 1:M
 end
 
 r(1,:) =[0.5,1.3];
-r(2,:) =[0.5,1.3];
+r(2,:) =[0.6,1.4];
 r(3,:) =[0.2,0.4];
 
 % initial conditions
@@ -64,7 +64,7 @@ for i = 1:M
         objective = objective + (x{i,k}(1:nu)-r(i,:)')'* Q * ...
             (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};
         
-        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]];       
+        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],x{3,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0],a{3,N} == [0;0]];       
     end
    
 end
@@ -85,7 +85,7 @@ end
    
     
 %% Definition
-for m = 1:10  
+for m = 1:6  
 constraints = [];
 objective = 0;
 sum =0;
@@ -129,7 +129,7 @@ end
 
 
     %optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0 ],objective);
-    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]],objective);
+    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],x{3,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0],a{3,N} == [0;0]],objective);
     %x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]
    
  
@@ -143,7 +143,7 @@ end
 %% Visualisation
 
 %admm_visualise (r,x,N,T);
-admm_visualise([0;1.2],x,N,T);
+admm_visualise([0.5;1.3],x,N,T);
 
 
 

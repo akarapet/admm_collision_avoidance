@@ -20,17 +20,17 @@ Q = eye(nu)*1;
 R = eye(nu)*1;
 
 % Number of iterations
-it = 25;
+it = 5;
 
 M = 2; % Number of agents
 N_j = M-1; % Number of neighbours 
-delta = 0.05; % Inter-agent distance 
+delta = 0.01; % Inter-agent distance 
 rho = 0.5;
 
 
 % position reference setpoint
 
-r =[0;0];
+r =[0.5;1.3];
 
 
 % w and w_from_j
@@ -82,10 +82,10 @@ end
 % initial conditions
 
 
-x_0 = [1 -1 -1 ;
-       2 -2  2 ; 
-       0  0   0 ;
-       0  0   0];
+x_0 = [1.5 0.5  -1 ;
+       1     0   2 ; 
+       0     0   0 ;
+       0     0   0];
 ops = sdpsettings('verbose',0);
    
 for m =1:it   
