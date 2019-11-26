@@ -17,11 +17,11 @@ nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*10;
-R = eye(nu)*0.1;
+Q = eye(nu)*150;
+R = eye(nu)*1;
 
 
-M = 2; % Number of agents
+M = 3; % Number of agents
 delta = 0.01; % Inter-agent distance 
  
 % initialize the states, reference, control and nominal states
@@ -35,29 +35,17 @@ for i = 1:M
     
 end
 
-r(1,:) =[0,4];
-r(2,:) =[0,4];
-
-
-%  populate nominal values
-% for k = 1:N
-% 
-% %     x_nominal{1,k} = ones(nx,1)*0.05;
-% %     x_nominal{2,k} = -0.01 * ones(nx,1);
-% %     x_nominal{3,k} = 0 * ones(nx,1);
-% 
-%     %x_nominal{1,k} = [4;k];
-%     %x_nominal{2,k} = [k;3];
-%    
-% end
+r(1,:) =[0.5,1.3];
+r(2,:) =[0.5,1.3];
+r(3,:) =[0.2,0.4];
 
 % initial conditions
 
-x_1_0 = [8;4;0;0];
-x_2_0 = [2;1;0;0];
+x_1_0 = [1.5;1;0;0];
+x_2_0 = [0.5;0;0;0];
+x_3_0 = [1.4;1.3;0;0];
+ops = sdpsettings('verbose',0);
 
-
-x_3_0 = [-0.8;-1;0;0];
 
 x1 = linspace(x_1_0(1),r(1),N);
 y1 = linspace(x_1_0(2),r(3),N);
@@ -73,29 +61,44 @@ for i = 1:M
 
     for k = 1:N
         
-        objective = objective + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
-            (x{i,k}(1:nu) - r(i,:)') + a{i,k}'* R * a{i,k};
+        objective = objective + (x{i,k}(1:nu)-r(i,:)')'* Q * ...
+            (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};
         
-        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{1,1} == x_1_0,x{2,1} == x_2_0, x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]];       
+        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]];       
     end
    
 end
 
  optimize(constraints,objective);
 
+    for i =1:M
+        
+    for k = 1:N
+        %sum = sum +abs(x_nominal{i,k}(1:nu)-value(x{i,k}(1:nu)));
+        ref{i,k} = value(x{i,k}(1:nu));
+        
+        %sum = sum +abs(x_nominal{i,k}(1:nu)-value(x{i,k}(1:nu)));
+    end
+    
+    end 
+ 
+   
+    
 %% Definition
-for m = 1:25
+for m = 1:10  
 constraints = [];
 objective = 0;
 sum =0;
-    for i =1:M
+
+     for i =1:M
     for k = 1:N
         %sum = sum +abs(x_nominal{i,k}(1:nu)-value(x{i,k}(1:nu)));
         x_nominal{i,k} = value(x{i,k}(1:nu));
+        
         %sum = sum +abs(x_nominal{i,k}(1:nu)-value(x{i,k}(1:nu)));
     end
-    end
- 
+
+    end 
 
 for k = 1:N
    
@@ -103,8 +106,8 @@ for k = 1:N
    
     for i = 1:M
         
-        objective = objective + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
-            (x{i,k}(1:nu) - r(i,:)') + a{i,k}'* R * a{i,k};
+        objective = objective + (x{i,k}(1:nu) - ref{i,k})'* Q * ...
+            (x{i,k}(1:nu)-ref{i,k}) + a{i,k}'* R * a{i,k};
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];
         
@@ -114,7 +117,7 @@ for k = 1:N
                 
               eta_ij = (x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu)) * 1/norm(x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu));
               h_ij = eta_ij'*((x{i,k}(1:nu) - x{j,k}(1:nu)) - (x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu))) - delta ;  
-              constraints = [constraints,  h_ij  >= 0];
+              constraints = [constraints, h_ij >= 0];
               
             end
         end
@@ -126,9 +129,10 @@ end
 
 
     %optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0 ],objective);
-    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0, x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]],objective);
-    %x = solve(x_nominal);
-    sum =0;
+    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]],objective);
+    %x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0]
+   
+ 
 
     m
        
@@ -139,7 +143,7 @@ end
 %% Visualisation
 
 %admm_visualise (r,x,N,T);
-admm_visualise_2([0;4],x,N,T);
+admm_visualise([0;1.2],x,N,T);
 
 
 
