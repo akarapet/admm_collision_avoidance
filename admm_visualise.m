@@ -21,7 +21,13 @@ for k = 1:(N+1)
     
     % reference 
 %plot(r{1}(1),r{1}(2),'kx')
-plot(r(1),r(2),'kx')
+%plot(r(1),r(2),'kx')
+plot(r(1,1),r(1,2),'kx')
+hold on
+plot(r(2,1),r(2,2),'kx')
+hold on
+plot(r(3,1),r(3,2),'kx')
+
 hold on
 
 % initial point
