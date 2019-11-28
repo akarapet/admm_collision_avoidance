@@ -16,23 +16,25 @@ nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*1000;
-R = eye(nu)*1000;
+Q = eye(nu)*14;
+R = eye(nu)*5;
 
 % Number of iterations
-it = 15;
+it = 50;
 
-M = 2; % Number of agents
+M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
-delta = 0.3; % Inter-agent distance 
-rho = 0.5;
+delta = 0.2; % Inter-agent distance 
+rho = 15;
 
 
 % position reference setpoint
-
-r =[0.5 0.6;
-    1.3  1.4];
-
+% 
+%   r =[0.5  0    0;
+%       1  0.5  0.5;];
+r(1,:) =[0.5,1];
+r(2,:) =[0,0.5];
+r(3,:) =[0,0.5];
 
 % w and w_from_j
 
@@ -60,10 +62,10 @@ for i = 1:M
             w_from_jc{i,j,k} = [0;0];
             
             % w_to_j
-            w_to_jc{i,j,k} = [0.1;0.1];
+            %w_to_jc{i,j,k} = [0.1;0.1];
             
-            lambda_from_j{i,j,k} = [1;1];
-            lambda_to_j{i,j,k} = [1;1];
+            lambda_from_j{i,j,k} = [5;5];
+            lambda_to_j{i,j,k} = [5;5];
         end
     end
     
@@ -71,17 +73,17 @@ end
 
 for k = 1:N
     
-    lambda{1,k} = [1;1];
-    lambda{2,k} = [1;1];
-    lambda{3,k} = [1;1];
+    lambda{1,k} = [5;5];
+    lambda{2,k} = [5;5];
+    lambda{3,k} = [5;5];
     
 end
 
 % initial conditions
 
 
-x_0 = [1.5 0.5  -1 ;
-       1     0   2 ; 
+x_0 = [0.5   1   1 ;
+       0   0.5 1.5 ; 
        0     0   0 ;
        0     0   0];
    
@@ -94,13 +96,13 @@ for i = 1:M
     constraints =[];
     for k = 1:N
         
-        objective = objective + (x{i,k}(1:nu)-r(:,i))'* Q * ...
-            (x{i,k}(1:nu)-r(:,i)) + a{i,k}'* R * a{i,k};
+        objective = objective + (x{i,k}(1:nu)-r(i,:)')'* Q * ...
+            (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];       
     end
     
-    optimize(constraints,objective,ops);
+    optimize(constraints,objective);
     
     for k =1:(N+1)
        wc{i,k} = value(x{i,k}(1:nu));
@@ -115,6 +117,7 @@ for i = 1:M
    for j = 1:M
       if i~=j
          w_from_jc{i,j,k} = value(x{j,k}(1:nu));
+         w_to_jc{i,j,k} = value(x{j,k}(1:nu));
       end
    end 
  end
@@ -206,12 +209,12 @@ for i = 1:M
               J_2 = J_2 + lambda_to_j{i,j,k}'*(xc{j,k}(1:nu)-w_to_j{i,j,k})+rho*0.5*(xc{j,k}(1:nu)-w_to_j{i,j,k})'*(xc{j,k}(1:nu)-w_to_j{i,j,k});
           
 %               eta_ij = (wc{i,k} - w_to_jc{i,j,k}) * 1/norm(wc{i,k} - w_to_jc{i,j,k});
-%               part_g = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(wc{i,k} - w_to_jc{i,j,k})) - delta;
+%               h_ij = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(wc{i,k} - w_to_jc{i,j,k})) - delta;
 % 
               eta_ij = (xc{i,k}(1:nu) - xc{j,k}(1:nu)) * 1/norm(xc{i,k}(1:nu) - xc{j,k}(1:nu));
-              part_g = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(xc{i,k}(1:nu) - xc{j,k}(1:nu))) - delta;
+              h_ij = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(xc{i,k}(1:nu) - xc{j,k}(1:nu))) - delta;
               
-              constraints_2 = [constraints_2, part_g >= 0];
+              constraints_2 = [constraints_2, norm(wc{i,k} - w_to_jc{i,j,k}) + h_ij >= 0];
           end
           
       end
@@ -272,4 +275,4 @@ end
 
 %% Visualisation
 
-admm_visualise_2(r(:,1),x,N,T);
+admm_visualise(r,x,N,T);
