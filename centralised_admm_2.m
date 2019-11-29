@@ -16,7 +16,7 @@ nx = 4; % Number of states
 nu = 2; % Number of inputs
 
 % MPC data
-N = 100;
+N = 50;
 Q = eye(nu)*14;
 R = eye(nu)*5;
 
@@ -84,7 +84,7 @@ end
    
     
 %% Definition
-for m = 1:10  
+for m = 1:3  
     
 constraints = [];
 objective = 0;
