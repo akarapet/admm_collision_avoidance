@@ -20,7 +20,7 @@ Q = eye(nu)*14;
 R = eye(nu)*5;
 
 % Number of iterations
-it = 50;
+it = 20;
 
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
