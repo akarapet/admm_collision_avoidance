@@ -1,4 +1,4 @@
- %% Initialisation
+  %% Initialisation
 
 yalmip('clear')
 clear all

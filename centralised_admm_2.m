@@ -16,7 +16,7 @@ nx = 4; % Number of states
 nu = 2; % Number of inputs
 
 % MPC data
-N = 50;
+N = 100;
 Q = eye(nu)*14;
 R = eye(nu)*5;
 
