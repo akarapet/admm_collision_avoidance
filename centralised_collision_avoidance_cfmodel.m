@@ -32,7 +32,7 @@ R = eye(nu)*5;
 
 
 M = 3; % Number of agents
-delta = 0.2; % Inter-agent distance 
+delta = 0.5; % Inter-agent distance 
  
 % initialize the states, reference, control and nominal states
 for i = 1:M

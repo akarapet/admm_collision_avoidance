@@ -6,13 +6,15 @@ clear all
 
 % Model data
 T = 0.1;
-A = [1 0 T 0;
-     0 1 0 T;
-     0 0 1 0;
-     0 0 0 1];
-B = [0 0;0 0;T 0;0 T];
+A = [1 0 0.09629 0 0 0.03962;
+         0 1 0 0.09629 -0.03962 0;
+         0 0 0.8943 0 0 0.7027;
+         0 0 0 0.8943 -0.7027 0;
+         0 0 0 0.1932 0.4524 0;
+         0 0 -0.1932 0 0 0.4524];
+B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
 
-nx = 4; % Number of states
+nx = 6; % Number of states
 nu = 2; % Number of inputs
 
 % MPC data
@@ -21,8 +23,8 @@ Q = eye(nu)*14;
 R = eye(nu)*5;
 
 
-M = 3; % Number of agents
-delta = 0.2; % Inter-agent distance 
+M = 2; % Number of agents
+delta = 0.4; % Inter-agent distance 
  
 % initialize the states, reference, control and nominal states
 for i = 1:M
@@ -35,18 +37,21 @@ for i = 1:M
     
 end
 
-r(1,:) =[0.5,1];
-r(2,:) =[0,0.5];
-r(3,:) =[0,0.5];
+r(1,:) =[0,0];
+r(2,:) =[0,0];
+%r(3,:) =[0,0.5];
 
 % initial conditions
 
-x_0 = [0.5   1   1 ;
-       0   0.5 1.5 ; 
-       0     0   0 ;
-       0     0   0];
+x_0 = [1   -1 ;
+       1   -1 ; 
+       0    0 ;
+       0    0 
+       0    0
+       0    0];
 
 ops = sdpsettings('verbose',0);
+
 
 
 constraints = [];
@@ -80,14 +85,14 @@ end
    
     
 %% Definition
-for m = 1:3  
+for m = 1:10  
     
 constraints = [];
 objective = 0;
 
     for i =1:M
-      
-      constraints = [constraints, x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
+        
+      constraints = [constraints, x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];  
         
       for k = 1:N
       x_nominal{i,k} = value(x{i,k}(1:nu));  
@@ -122,8 +127,8 @@ for k = 1:N
 end
 
     
-    %optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) ==[0;0],x{2,N+1}(3:4) == [0;0],x{3,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0],a{3,N} == [0;0]],objective);
     optimize(constraints,objective);
+   
     m
        
 end
@@ -132,7 +137,7 @@ end
 
 %% Visualisation
 
-admm_visualise (r,x,N,T);
+admm_visualise_2drones (r,x,N,T);
 %admm_visualise([0.5;1.3],x,N,T);
 
 
