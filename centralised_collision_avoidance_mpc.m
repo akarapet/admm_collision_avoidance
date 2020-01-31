@@ -19,7 +19,8 @@ nu = 2; % Number of inputs
 N = 100;
 Q = eye(nu)*14;
 R = eye(nu)*5;
-[K,S,e] = dlqr(A,B,Q,R,N);
+Qf = Q; Qf(4,4) = 0;
+[K,S,e] = dlqr(A,B,Qf,R);
 
 M = 3; % Number of agents
 delta = 0.2; % Inter-agent distance 
@@ -31,7 +32,7 @@ for i = 1:M
     a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));
     %r{i} = sdpvar(nu*N,1);
     %r{i} = ones(nu*N,1)*0;
-    %x_nominal(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
+    x_nominal(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
     
 end
 
@@ -61,7 +62,7 @@ for i = 1:M
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];       
     end
-    objective = objective + 
+    
     constraints = [constraints,  x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
    
 end
@@ -87,11 +88,12 @@ objective = 0;
     for i =1:M     
       constraints = [constraints,x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
          for k = 1:N
-            x_nominal{i,k} = value(x{i,k}(1:nu));  
+            x_nominal{i,k} = value(x{i,k}(1:nu));   
          end
     end 
 
 for k = 1:N
+   
     for i = 1:M
         
         objective = objective  + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
@@ -113,6 +115,10 @@ for k = 1:N
     end
 
 
+end
+
+for i = 1:M
+    objective = objective + (x{i,N}(1:nu)-r(i,:)')'* S(1:2,1:2) * (x{i,N}(1:nu)-r(i,:)');
 end
 
 parameters_in = {x{1,1},x{2,1},x{3,1}};
@@ -137,9 +143,10 @@ for m = 1:MPC_L
             constraints = [constraints,x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
         
             for k = 1:N
-                %x_nominal{i,k} = value(x{i,k}(1:nu));  
+                x_nominal{i,k} = value(x{i,k}(1:nu));  
             end
         end 
+        
         [solutions,diagnostics] = controller{inputs};
     end    
     
