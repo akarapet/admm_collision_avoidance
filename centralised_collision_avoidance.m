@@ -100,8 +100,10 @@ for k = 1:N
    
     for i = 1:M
         
-        objective = objective  + (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-            (x{i,k}(1:nu)-ref{i,k}) + a{i,k}'* R * a{i,k};
+        %objective = objective  + (x{i,k}(1:nu) - ref{i,k})'* Q * ...
+            %(x{i,k}(1:nu)-ref{i,k}) + a{i,k}'* R * a{i,k};
+        objective = objective  + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
+            (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};        
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];
         

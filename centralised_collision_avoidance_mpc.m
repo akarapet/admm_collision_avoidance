@@ -19,7 +19,7 @@ nu = 2; % Number of inputs
 N = 100;
 Q = eye(nu)*14;
 R = eye(nu)*5;
-
+[K,S,e] = dlqr(A,B,Q,R,N);
 
 M = 3; % Number of agents
 delta = 0.2; % Inter-agent distance 
@@ -54,7 +54,6 @@ objective = 0;
 
 for i = 1:M
    
-
     for k = 1:N
 
         objective = objective + (x{i,k}(1:nu)-r(i,:)')'* Q * ...
@@ -62,7 +61,9 @@ for i = 1:M
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];       
     end
-   constraints = [constraints,  x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
+    objective = objective + 
+    constraints = [constraints,  x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
+   
 end
 
  optimize(constraints,objective);
@@ -93,8 +94,8 @@ objective = 0;
 for k = 1:N
     for i = 1:M
         
-        objective = objective  + (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-            (x{i,k}(1:nu)-ref{i,k}) + a{i,k}'* R * a{i,k};
+        objective = objective  + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
+            (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];
         
@@ -104,7 +105,7 @@ for k = 1:N
                 
               eta_ij = (x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu)) * 1/norm(x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu));
               h_ij = eta_ij'*((x{i,k}(1:nu) - x{j,k}(1:nu)) - (x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu))) - delta ;  
-              constraints = [constraints, norm(x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu))+h_ij >= 0];
+              constraints = [constraints,norm(x_nominal{i,k}(1:nu) - x_nominal{j,k}(1:nu))+ h_ij >= 0];
               
             end
         end
@@ -121,34 +122,41 @@ solutions_out = {[a{1,1}],[a{2,1}],[a{3,1}]};
     %optimize(constraints,objective);
     controller = optimizer(constraints, objective,[],parameters_in,solutions_out);
 
-x{1} = x_0(:,1);
-x{2} = x_0(:,2);
-x{3} = x_0(:,3);
-for m = 1:100
+MPC_L = 15;
     
-    inputs = {x{1},x{2},x{3}};
+for m = 1:MPC_L
     
-    [solutions,diagnostics] = controller{inputs}; 
-
-       
-    x{1} = A*x{1} + B*solutions{1};
-    x{2} = A*x{2} + B*solutions{2};
-    x{3} = A*x{3} + B*solutions{3};
-    for i =1:M
-         
-     implementedX{i,m} =  value(x{i,m}(1:nu));
-     for k = 1:N
-      x_nominal{i,k} = value(x{i,k}(1:nu));  
-      end
+    inputs = {x_0(:,1),x_0(:,2),x_0(:,3)};
+    for it = 1:3 
+        
+        constraints = [];
+        objective = 0;
+        
+        for i =1:M
+      
+            constraints = [constraints,x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];
+        
+            for k = 1:N
+                %x_nominal{i,k} = value(x{i,k}(1:nu));  
+            end
+        end 
+        [solutions,diagnostics] = controller{inputs};
+    end    
+    
+    x_0(:,1) = A*x_0(:,1) + B*solutions{1};
+    x_0(:,2) = A*x_0(:,2) + B*solutions{2};
+    x_0(:,3) = A*x_0(:,3) + B*solutions{3};
+    
+    for i =1:M         
+        implementedX{i,m} =  x_0(:,i);
     end 
-   
-  
+
 end
 
 
 %% Visualisation
 
-admm_visualise (r,implementedX,N-1,T);
+admm_visualise (r,implementedX,MPC_L-1,T);
 %admm_visualise([0.5;1.3],x,N,T);
 
 

@@ -139,8 +139,11 @@ for i = 1:M
     
      for k = 1:N
          
-         J = (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-             (x{i,k}(1:nu) - ref{i,k}) + a{i,k}'* R * a{i,k};
+         %J = (x{i,k}(1:nu) - ref{i,k})'* Q * ...
+             %(x{i,k}(1:nu) - ref{i,k}) + a{i,k}'* R * a{i,k};
+
+         J = (x{i,k}(1:nu) - r(i,:)')'* Q * ...
+             (x{i,k}(1:nu) - r(i,:)') + a{i,k}'* R * a{i,k};         
          
          J_1 = lambda{i,k}'* (x{i,k}(1:nu) - wc{i,k});
           
