@@ -16,14 +16,14 @@ nx = 4; % Number of states
 nu = 2; % Number of inputs
 
 % MPC data
-N = 100;
+N = 50;
 Q = eye(nu)*14;
 R = eye(nu)*5;
 Qf = Q; Qf(4,4) = 0;
 [K,S,e] = dlqr(A,B,Qf,R);
 
 M = 3; % Number of agents
-delta = 0.2; % Inter-agent distance 
+delta = 0.3; % Inter-agent distance 
  
 % initialize the states, reference, control and nominal states
 for i = 1:M
