@@ -7,12 +7,13 @@ A = [1 0 0.09629 0 0 0.03962;
          0 0 -0.1932 0 0 0.4524];
 B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
 
-M = 3; % Number of agents
+
+M = 2; % Number of agents
 
 
 % Make matrices for the whole centralised system
-Ad = (blkdiag(A,A,A));
-Bd =[B;B;B];
+Ad = sparse(blkdiag(A,A));
+Bd =[B;B];
 
 nx = M*6; % Number of states
 nu = M*2; % Number of inputs
@@ -24,15 +25,15 @@ R = eye(nu/M)*5;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 [K,QN,e] = dlqr(A,B,Qf,R);
 
-Q  = blkdiag(Qf,Qf,Qf);
-R  = blkdiag(R,R,R);
-QN = blkdiag(QN,QN,QN);
+Q  = sparse(blkdiag(Qf,Qf));
+R  = sparse(blkdiag(R,R));
+QN = sparse(blkdiag(QN,QN));
 
 delta = 0.3; % Inter-agent distance 
 
 % Initial and reference states
-r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
-x0 = [0.5;0;0;0;0;0; 1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
+r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0]; % 0;0.5;0;0;0;0];
+x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0];% 1;1.5;0;0;0;0;];
 
 
 % Prediction horizon
@@ -58,7 +59,7 @@ ueq = leq;
 % To be done
 
 % - OSQP constraints
-A = Aeq;
+%A = Aeq;
 l = leq;
 u = ueq;
 
