@@ -2,3 +2,5 @@
 *.slxc
 slprj/
 *.autosave
+osqp/
+install_osqp.m
