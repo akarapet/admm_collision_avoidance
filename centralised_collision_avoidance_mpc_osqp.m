@@ -11,7 +11,7 @@ M = 3; % Number of agents
 
 
 % Make matrices for the whole centralised system
-Ad = sparse(blkdiag(A,A,A));
+Ad = (blkdiag(A,A,A));
 Bd =[B;B;B];
 
 nx = M*6; % Number of states
@@ -36,7 +36,7 @@ x0 = [0.5;0;0;0;0;0; 1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
 
 
 % Prediction horizon
-N = 10;
+N = 1;
 
 % Cast MPC problem to a QP: x = (x(0),x(1),...,x(N),u(0),...,u(N-1))
 
@@ -50,7 +50,7 @@ q = [repmat(-Q*r, N, 1); -QN*r; zeros(N*nu, 1)];
 Ax = kron(speye(N+1), -speye(nx)) + kron(sparse(diag(ones(N, 1), -1)), Ad);
 Bu = kron([sparse(1, N); speye(N)], Bd);
 Aeq = [Ax, Bu];
-leq = [-x0; zeros(N*nx, 1)];
+leq = [-Ad*x0; zeros(N*nx, 1)];
 ueq = leq;
 
 % - input and state constraints
@@ -66,7 +66,7 @@ u = ueq;
 prob = osqp;
 
 % Setup workspace
-prob.setup(P, q, A, l, u, 'warm_start', true);
+prob.setup(P, q, Aeq, leq, ueq, 'alpha', 1);
 
 res = prob.solve();
 
