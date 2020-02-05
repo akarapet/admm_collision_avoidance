@@ -31,6 +31,25 @@ QN = sparse(blkdiag(QN,QN,QN));
 
 delta = 0.3; % Inter-agent distance 
 
+% A_ineq matrix creation
+
+d = [eye(2),zeros(nu/M,nu-nu/M)];
+kron_mat = [ones(M-1,1),-1*eye(M-1) ];
+
+AK_matrix = kron_mat;
+
+for i = 2:M
+
+    v = kron_mat(:, i-1);
+    kron_mat(:, i-1) = kron_mat(:, i);
+    kron_mat(:, i) = v;
+    AK_matrix = [AK_matrix; kron_mat];
+    
+end
+
+diff_matrix = kron(AK_matrix, d);
+
+
 % Initial and reference states
 r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
 x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
@@ -64,40 +83,42 @@ l = leq;
 u = ueq;
 
 % Create an OSQP object
-%prob = osqp;
+prob = osqp;
 
 % Setup workspace
-%prob.setup(P, q, A, l, u, 'warm_start', true);
+prob.setup(P, q, A, l, u, 'warm_start', true);
 
-%res = prob.solve();
-%x = res.x(1:nx*(N+1));
+res = prob.solve();
+x = res.x(1:nx*(N+1));
 
 % Simulate in closed loop
-nsim = 15;
+nsim = 1;
 for i = 1 : nsim
 
-    %x_bar = x;
-    
-    
-end
-
-
-% A_ineq matrix creation
-
-d = [eye(2),zeros(nu/M,nu-nu/M)];
-kron_mat = [ones(M-1,1),-1*eye(M-1) ];
-
-A_ineq = kron_mat;
-
-for i = 2:M
-
-    v = kron_mat(:, i-1);
-    kron_mat(:, i-1) = kron_mat(:, i);
-    kron_mat(:, i) = v;
-    A_ineq = [A_ineq; kron_mat];
+    x_bar = x;
+    delta_x_bar = (kron(eye(N+1),diff_matrix) * x_bar);
+    A_ineq = eta_maker(delta_x_bar,N,M,nu,nx,diff_matrix);
     
 end
 
-A_ineq = kron(A_ineq, d);
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T)
+
+function A_ineq = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix)
+
+    A_ineq = zeros(N*nu,N*nu*(M-1));
+    
+    for k = 1:N
+        
+        eta_M_k = zeros(M*(M-1),nu*(M-1));
+        delta_x_k = delta_x_bar((k-1)*nu*(M-1)+1:k*nu*(M-1));
+        
+        for i = 1:nu
+        
+            eta_M_k(i,(i-1)*nu/M+1:(i-1)*nu/M+nu/M) = delta_x_k((i-1)*nu/M+1:i*nu/M)' ...
+                * 1/norm(delta_x_k((i-1)*nu/M+1:i*nu/M));
+        end
+        
+        A_ineq( (k-1)*nu+1 : k*nu , (k-1)*nx+1 : k*nx ) = eta_M_k*diff_matrix;
+    end
+end
