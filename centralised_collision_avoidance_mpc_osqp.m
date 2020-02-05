@@ -7,7 +7,7 @@ A = [1 0 0.09629 0 0 0.03962;
          0 0 -0.1932 0 0 0.4524];
 B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
 
-
+T = 0.1;
 M = 3; % Number of agents
 
 
@@ -64,10 +64,40 @@ l = leq;
 u = ueq;
 
 % Create an OSQP object
-prob = osqp;
+%prob = osqp;
 
 % Setup workspace
-prob.setup(P, q, A, l, u, 'warm_start', true);
+%prob.setup(P, q, A, l, u, 'warm_start', true);
 
-res = prob.solve();
+%res = prob.solve();
+%x = res.x(1:nx*(N+1));
 
+% Simulate in closed loop
+nsim = 15;
+for i = 1 : nsim
+
+    %x_bar = x;
+    
+    
+end
+
+
+% A_ineq matrix creation
+
+d = [eye(2),zeros(nu/M,nu-nu/M)];
+kron_mat = [ones(M-1,1),-1*eye(M-1) ];
+
+A_ineq = kron_mat;
+
+for i = 2:M
+
+    v = kron_mat(:, i-1);
+    kron_mat(:, i-1) = kron_mat(:, i);
+    kron_mat(:, i) = v;
+    A_ineq = [A_ineq; kron_mat];
+    
+end
+
+A_ineq = kron(A_ineq, d);
+%Visualise
+%admm_visualise_osqp (r,res.x,N,T)
