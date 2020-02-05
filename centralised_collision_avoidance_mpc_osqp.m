@@ -8,12 +8,12 @@ A = [1 0 0.09629 0 0 0.03962;
 B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
 
 
-M = 2; % Number of agents
+M = 3; % Number of agents
 
 
 % Make matrices for the whole centralised system
-Ad = sparse(blkdiag(A,A));
-Bd =[B;B];
+Ad = sparse(blkdiag(A,A,A));
+Bd = sparse(blkdiag(B,B,B));
 
 nx = M*6; % Number of states
 nu = M*2; % Number of inputs
@@ -25,19 +25,19 @@ R = eye(nu/M)*5;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 [K,QN,e] = dlqr(A,B,Qf,R);
 
-Q  = sparse(blkdiag(Qf,Qf));
-R  = sparse(blkdiag(R,R));
-QN = sparse(blkdiag(QN,QN));
+Q  = sparse(blkdiag(Qf,Qf,Qf));
+R  = sparse(blkdiag(R,R,R));
+QN = sparse(blkdiag(QN,QN,QN));
 
 delta = 0.3; % Inter-agent distance 
 
 % Initial and reference states
-r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0]; % 0;0.5;0;0;0;0];
-x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0];% 1;1.5;0;0;0;0;];
+r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
+x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
 
 
 % Prediction horizon
-N = 1;
+N = 10;
 
 % Cast MPC problem to a QP: x = (x(0),x(1),...,x(N),u(0),...,u(N-1))
 
@@ -59,7 +59,7 @@ ueq = leq;
 % To be done
 
 % - OSQP constraints
-%A = Aeq;
+A = Aeq;
 l = leq;
 u = ueq;
 
@@ -67,7 +67,7 @@ u = ueq;
 prob = osqp;
 
 % Setup workspace
-prob.setup(P, q, Aeq, leq, ueq, 'alpha', 1);
+prob.setup(P, q, A, l, u, 'warm_start', true);
 
 res = prob.solve();
 
