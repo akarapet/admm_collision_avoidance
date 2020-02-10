@@ -1,17 +1,19 @@
 % Discrete time model of a quadcopter
+% Obtained from formulate_system for T = 0.1
 A = [1 0 0.09629 0 0 0.03962;
          0 1 0 0.09629 -0.03962 0;
          0 0 0.8943 0 0 0.7027;
          0 0 0 0.8943 -0.7027 0;
          0 0 0 0.1932 0.4524 0;
          0 0 -0.1932 0 0 0.4524];
+     
 B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
 
 T = 0.1;
 M = 3; % Number of agents
 
 
-% Make matrices for the whole centralised system
+% Augment the matrices for 3 agents
 Ad = (blkdiag(A,A,A));
 Bd = (blkdiag(B,B,B));
 
@@ -22,16 +24,22 @@ nu = M*2; % Number of inputs
 Q = eye(nu/M)*14;
 R = eye(nu/M)*5;
 Qf = Q; Qf(nx/M,nx/M) = 0;
+
+% Get the terminal weight matrix QN by solving the discrete LQR equation
 [K,QN,e] = dlqr(A,B,Qf,R);
 
+% Initial and reference states
+r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
+x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
+
+% Augment the matrices for the 3 agent problem
 Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
 delta = 0.3; % Inter-agent distance 
 
-% A_ineq matrix creation
-
+% Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nu-nu/M)];
 kron_mat = [ones(M-1,1),-1*eye(M-1) ];
 
@@ -46,13 +54,7 @@ for i = 2:M
     
 end
 
-diff_matrix = kron(AK_matrix, d);
-
-
-% Initial and reference states
-r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
-x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
-
+V = kron(AK_matrix, d);
 
 % Prediction horizon
 N = 10;
@@ -72,29 +74,23 @@ Aeq = [Ax, Bu];
 leq = [-x0; zeros(N*nx, 1)];
 ueq = leq;
 
-% - input and state constraints
-
-% To be done
-
-% - OSQP constraints
-A = Aeq;
-l = leq;
-u = ueq;
-
-
 % Create an OSQP object
 prob = osqp;
 
-% augmentic non_zero matrix so that we setup the full (258 x 258) problem
+% augmented non_zero matrix so that we setup the full (258 x 258) problem
 G = [ones(nu,nu/M),zeros(nu,nu-nu/M)];
 A_augment = kron([zeros(N,1),eye(N)],[G,G,G]);
 A_augment(N*nu,N*nu+(N+1)*nx) = 0;
+
+% - input and state constraints
 A = [Aeq;A_augment];
 l = [leq;ones(N*nu,1)*(-inf)];
 u = [ueq;ones(N*nu,1)*inf];
 
+% get the indices of non-zero values in new A
 [row,col,v] = find(A);
 idx = sub2ind(size(A), row, col);
+
 % Setup workspace
 prob.setup(P, q, A, l, u, 'warm_start', true);
 
@@ -103,24 +99,31 @@ res = prob.solve();
 x = res.x(1:nx*(N+1));
 
 % Simulate in closed loop
-nsim = 30;
-implementedX = x0;
+nsim = 50;
+nit = 3;
+implementedX = x0; % a variable for storing the states for simulation
 
 for i = 1 : nsim
     
-    for it = 1:2
+    % the linearisation over previous solution x_bar
+    for it = 1:nit
         
-        x_bar = x;
-        delta_x_bar = (kron(eye(N+1),diff_matrix) * x_bar);
-        [A_ineq,l_ineq ]= eta_maker(delta_x_bar,N,M,nu,nx,diff_matrix,delta);
+        x_bar = x; % save previous solution
+        delta_x_bar = (kron(eye(N+1),V) * x_bar); % augmented delta x_bar 
+        
+        % Get the current A_ineq and l_ineq
+        [A_ineq,l_ineq ]= eta_maker(delta_x_bar,N,M,nu,nx,V,delta);
+        
         A_new = [Aeq;A_ineq];
         prob.update('Ax',A_new(idx));
+        
         l_new = [leq;l_ineq];
-        prob.update('l',l_new,'u', [ueq;ones(N*nu,1)*inf]);
+        prob.update('l',l_new,'u',[ueq;ones(N*nu,1)*inf]);
         
         res = prob.solve();
         x = res.x(1:nx*(N+1));
     end
+    
     % Apply first control input to the plant
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
     x0 = Ad*x0 + Bd*ctrl;
@@ -134,29 +137,33 @@ for i = 1 : nsim
 end
 
 %Visualise
-%admm_visualise_osqp (r,res.x,N,T)
+%admm_visualise_osqp (r,res.x,N,T) % for non-mpc
 admm_visualise_osqp (r,implementedX,nsim,T)
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
-
+    
+    %placeholders
     A_ineq = zeros(N*nu,N*nu+(N+1)*nx);
     l_ineq = zeros(N*nu,1);
+    
     for k = 2:N+1
         
-        eta_M_k = zeros(M*(M-1),nu*(M-1));
-        delta_x_k = delta_x_bar((k-1)*nu*(M-1)+1:k*nu*(M-1));
+        eta_M_k = zeros(M*(M-1),nu*(M-1)); % placeholder
+        delta_x_k = delta_x_bar((k-1)*nu*(M-1)+1:k*nu*(M-1)); % get k-th delta_x
         
         for i = 1:nu
         
-            x_bar_norm = norm(delta_x_k((i-1)*nu/M+1:i*nu/M));
-            eta_ij_k = delta_x_k((i-1)*nu/M+1:i*nu/M)' * 1/x_bar_norm;
-            eta_M_k(i,(i-1)*nu/M+1:(i-1)*nu/M+nu/M) = eta_ij_k;
+            x_bar_norm = norm(delta_x_k((i-1)*nu/M+1:i*nu/M)); % get the 2 norma of x_bar
+            eta_ij_k = delta_x_k((i-1)*nu/M+1:i*nu/M)' * 1/x_bar_norm; % formulate eta
+            eta_M_k(i,(i-1)*nu/M+1:(i-1)*nu/M+nu/M) = eta_ij_k; % populate matrix eta_M
             
-            l_ineq((k-2)*nu+i) = delta + eta_ij_k * delta_x_k((i-1)*nu/M+1:i*nu/M) - x_bar_norm;
+            l_ineq((k-2)*nu+i) = delta + eta_ij_k * delta_x_k((i-1)*nu/M+1:i*nu/M) - x_bar_norm; % fill in l_ij
             
         end
         
-        A_ineq( (k-2)*nu+1 : (k-1)*nu , (k-1)*nx+1 : k*nx ) = eta_M_k*diff_matrix;
+        % Populate the inequality matrix, note that  (60 x 60) final part
+        % of it will remain 0-s for the inputs
+        A_ineq( (k-2)*nu+1 : (k-1)*nu , (k-1)*nx+1 : k*nx ) = eta_M_k*diff_matrix; 
        
     end
     
