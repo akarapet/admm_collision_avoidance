@@ -149,7 +149,9 @@ for m = 1:MPC_L
     x_0(:,1) = A*x_0(:,1) + B*a{1};
     x_0(:,2) = A*x_0(:,2) + B*a{2};
     x_0(:,3) = A*x_0(:,3) + B*a{3};
+    
     toc
+    
     for i =1:M
         implementedX{i,m} =  x_0(:,i);
     end
