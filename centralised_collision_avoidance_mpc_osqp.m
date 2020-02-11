@@ -21,7 +21,7 @@ nx = M*6; % Number of states
 nu = M*2; % Number of inputs
 
 % MPC data
-Q = eye(nu/M)*14;
+Q = eye(nu/M)*5;
 R = eye(nu/M)*5;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
@@ -102,6 +102,7 @@ x = res.x(1:nx*(N+1));
 nsim = 50;
 nit = 3;
 implementedX = x0; % a variable for storing the states for simulation
+ctrl_applied =[]; % agent 1
 
 for i = 1 : nsim
     
@@ -128,6 +129,11 @@ for i = 1 : nsim
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
     x0 = Ad*x0 + Bd*ctrl;
     
+    % SEND INPUT TO RUNNING PYTHON CODE VIA ROS TO BE APPLIED TO CF
+    ctrl_applied(i,1:nu/M) = ctrl(1:nu/M)';
+    
+    % RECEIVE THE CURRENT STATE OF THE CF FROM PYTHON CODE VIA ROS
+    
     implementedX = [implementedX, x0];
     % Update initial state
     leq(1:nx) = -x0;
@@ -136,9 +142,12 @@ for i = 1 : nsim
     
 end
 
+
+
+
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T) % for non-mpc
-admm_visualise_osqp (r,implementedX,nsim,T)
+%admm_visualise_osqp (r,implementedX,nsim,T) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     
