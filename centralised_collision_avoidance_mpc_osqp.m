@@ -37,7 +37,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.5; % Inter-agent distance 
+delta = 0.3; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nu-nu/M)];
@@ -103,14 +103,14 @@ u = [ueq;upper_inf; max_input];
 idx = sub2ind(size(A), row, col);
 
 % Setup workspace
-prob.setup(P, q, A, l, u, 'warm_start', true);
+prob.setup(P, q, A, l, u, 'warm_start', true,'verbose',false);
 
 
 res = prob.solve();
 x = res.x(1:nx*(N+1));
 
 % Simulate in closed loop
-nsim = 60;
+nsim = 100;
 nit = 3;
 implementedX = x0; % a variable for storing the states for simulation
 ctrl_applied =[]; % agent 1
@@ -156,7 +156,7 @@ end
 
 
 dlmwrite('testinputs.txt',ctrl_applied);
-ctrl_applied
+
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T) % for non-mpc
 admm_visualise_osqp (r,implementedX,nsim,T) % for mpc
