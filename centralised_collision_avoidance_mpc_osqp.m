@@ -21,8 +21,8 @@ nx = M*6; % Number of states
 nu = M*2; % Number of inputs
 
 % MPC data
-Q = eye(nu/M)*5;
-R = eye(nu/M)*5;
+Q = eye(nu/M)*8;
+R = eye(nu/M)*15;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
 % Get the terminal weight matrix QN by solving the discrete LQR equation
@@ -37,7 +37,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.3; % Inter-agent distance 
+delta = 0.5; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nu-nu/M)];
@@ -81,11 +81,22 @@ prob = osqp;
 G = [ones(nu,nu/M),zeros(nu,nu-nu/M)];
 A_augment = kron([zeros(N,1),eye(N)],[G,G,G]);
 A_augment(N*nu,N*nu+(N+1)*nx) = 0;
+A_augment = [A_augment;zeros(N*nu,(N+1)*nx),eye(N*nu)];
 
 % - input and state constraints
 A = [Aeq;A_augment];
-l = [leq;ones(N*nu,1)*(-inf)];
-u = [ueq;ones(N*nu,1)*inf];
+
+umin = ones(nu,1)*-1;
+umax = ones(nu,1)*1;
+
+lower_inf = ones(N*nu,1)*(-inf);
+upper_inf = ones(N*nu,1)*inf;
+
+min_input = repmat(umin,N,1);
+max_input = repmat(umax,N,1);
+
+l = [leq;lower_inf; min_input];
+u = [ueq;upper_inf; max_input];
 
 % get the indices of non-zero values in new A
 [row,col,v] = find(A);
@@ -99,7 +110,7 @@ res = prob.solve();
 x = res.x(1:nx*(N+1));
 
 % Simulate in closed loop
-nsim = 50;
+nsim = 60;
 nit = 3;
 implementedX = x0; % a variable for storing the states for simulation
 ctrl_applied =[]; % agent 1
@@ -118,8 +129,9 @@ for i = 1 : nsim
         A_new = [Aeq;A_ineq];
         prob.update('Ax',A_new(idx));
         
-        l_new = [leq;l_ineq];
-        prob.update('l',l_new,'u',[ueq;ones(N*nu,1)*inf]);
+        l_new = [leq;l_ineq;min_input];
+        u_new = [ueq;upper_inf;max_input];
+        prob.update('l',l_new,'u',u_new);
         
         res = prob.solve();
         x = res.x(1:nx*(N+1));
@@ -138,16 +150,16 @@ for i = 1 : nsim
     % Update initial state
     leq(1:nx) = -x0;
     ueq(1:nx) = -x0;
-    prob.update('l', [leq;l_ineq],'u', [ueq;ones(N*nu,1)*inf])
+    prob.update('l', [leq;l_ineq;min_input],'u', [ueq;upper_inf;max_input])
     
 end
 
 
-
-
+dlmwrite('testinputs.txt',ctrl_applied);
+ctrl_applied
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T) % for non-mpc
-%admm_visualise_osqp (r,implementedX,nsim,T) % for mpc
+admm_visualise_osqp (r,implementedX,nsim,T) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     
@@ -176,6 +188,6 @@ function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
        
     end
     
-    
+   A_ineq = [A_ineq;zeros(N*nu,(N+1)*nx),eye(N*nu)]; 
     
 end
