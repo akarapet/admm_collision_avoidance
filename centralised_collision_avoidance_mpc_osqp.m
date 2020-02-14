@@ -1,3 +1,5 @@
+clear, clc
+
 % Discrete time model of a quadcopter
 % Obtained from formulate_system for T = 0.1
 A = [1 0 0.09629 0 0 0.03962;
@@ -21,8 +23,8 @@ nx = M*6; % Number of states
 nu = M*2; % Number of inputs
 
 % MPC data
-Q = eye(nu/M)*8;
-R = eye(nu/M)*15;
+Q = eye(nu/M)*10;
+R = eye(nu/M)*13;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
 % Get the terminal weight matrix QN by solving the discrete LQR equation
@@ -81,6 +83,7 @@ prob = osqp;
 G = [ones(nu,nu/M),zeros(nu,nu-nu/M)];
 A_augment = kron([zeros(N,1),eye(N)],[G,G,G]);
 A_augment(N*nu,N*nu+(N+1)*nx) = 0;
+
 A_augment = [A_augment;zeros(N*nu,(N+1)*nx),eye(N*nu)];
 
 % - input and state constraints
@@ -103,15 +106,21 @@ u = [ueq;upper_inf; max_input];
 idx = sub2ind(size(A), row, col);
 
 % Setup workspace
-prob.setup(P, q, A, l, u, 'warm_start', true,'verbose',false);
+prob.setup(P, q, A, l, u,'warm_start', true,'verbose',true);
 
 
 res = prob.solve();
 x = res.x(1:nx*(N+1));
 
+% kappa = 19;
+% Rnew = eye(nu/M)*kappa;
+% Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
+% Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
+% prob.update('Px',nonzeros(triu(Pnew)));
+
 % Simulate in closed loop
 nsim = 100;
-nit = 3;
+nit = 2;
 implementedX = x0; % a variable for storing the states for simulation
 ctrl_applied =[]; % agent 1
 
@@ -132,6 +141,21 @@ for i = 1 : nsim
         l_new = [leq;l_ineq;min_input];
         u_new = [ueq;upper_inf;max_input];
         prob.update('l',l_new,'u',u_new);
+        
+%         while 1
+%             res = prob.solve();
+%             if res.info.status_val == -3
+%                 
+%                 kappa = kappa+1;
+%                 Rnew = eye(nu/M)*kappa;
+%                 Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
+%                 Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
+%                 
+%                 prob.update('Px',nonzeros(triu(Pnew)));
+%                 continue;
+%             end
+%             break;
+%         end
         
         res = prob.solve();
         x = res.x(1:nx*(N+1));
