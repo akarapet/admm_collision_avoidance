@@ -1,17 +1,17 @@
 clear, clc
 
 % Discrete time model of a quadcopter
-% Obtained from formulate_system for T = 0.1
-A = [1 0 0.09629 0 0 0.03962;
-         0 1 0 0.09629 -0.03962 0;
-         0 0 0.8943 0 0 0.7027;
-         0 0 0 0.8943 -0.7027 0;
-         0 0 0 0.1932 0.4524 0;
-         0 0 -0.1932 0 0 0.4524];
+% Obtained from formulate_system for T = 0.02
+A =     [1 0 0.01997 0 0 0.001884;
+         0 1 0 0.01997 -0.001884 0;
+         0 0 0.995 0 0 0.1845;
+         0 0 0 0.995 -0.1845 0;
+         0 0 0  0.04952 0.8816 0;
+         0 0 -0.04952 0 0 0.8816];
      
-B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
+B = [3.331e-05 0; 0 3.331e-05; 0.00495 0;0  0.00495;0 -0.04952;0.04952 0];
 
-T = 0.1;
+T = 0.02;
 M = 3; % Number of agents
 
 
@@ -59,7 +59,7 @@ end
 V = kron(AK_matrix, d);
 
 % Prediction horizon
-N = 10;
+N = 50;
 
 % Cast MPC problem to a QP: x = (x(0),x(1),...,x(N),u(0),...,u(N-1))
 
@@ -106,7 +106,7 @@ u = [ueq;upper_inf; max_input];
 idx = sub2ind(size(A), row, col);
 
 % Setup workspace
-prob.setup(P, q, A, l, u,'warm_start', true,'verbose',true);
+prob.setup(P, q, A, l, u,'warm_start', true,'verbose',false);
 
 
 res = prob.solve();
@@ -119,13 +119,13 @@ x = res.x(1:nx*(N+1));
 % prob.update('Px',nonzeros(triu(Pnew)));
 
 % Simulate in closed loop
-nsim = 100;
+nsim = 500;
 nit = 2;
 implementedX = x0; % a variable for storing the states for simulation
 ctrl_applied =[]; % agent 1
-
+ctrl_prev = zeros(6,1);
 for i = 1 : nsim
-
+    tic
     % the linearisation over previous solution x_bar
     for it = 1:nit
         
@@ -163,7 +163,9 @@ for i = 1 : nsim
     
     % Apply first control input to the plant
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
-    x0 = Ad*x0 + Bd*ctrl;
+    toc
+    x0 = Ad*x0 + Bd*ctrl_prev;
+    ctrl_prev = ctrl;
     % SEND INPUT TO RUNNING PYTHON CODE VIA ROS TO BE APPLIED TO CF
     ctrl_applied(i,1:nu/M) = ctrl(1:nu/M)';
     
