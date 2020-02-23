@@ -122,7 +122,9 @@ x = res.x(1:nx*(N+1));
 nsim = 100;
 nit = 2;
 implementedX = x0; % a variable for storing the states for simulation
-ctrl_applied =[]; % agent 1
+ctrl_applied_1 =[]; % agent 1
+ctrl_applied_2 =[]; % agent 2
+ctrl_applied_3 =[]; % agent 3
 
 for i = 1 : nsim
 
@@ -165,8 +167,9 @@ for i = 1 : nsim
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
     x0 = Ad*x0 + Bd*ctrl;
     % SEND INPUT TO RUNNING PYTHON CODE VIA ROS TO BE APPLIED TO CF
-    ctrl_applied(i,1:nu/M) = ctrl(1:nu/M)';
-    
+    ctrl_applied_1(i,1:nu/M) = ctrl(1:nu/M)';
+    ctrl_applied_2(i,1:nu/M) = ctrl(nu/M+1:2*nu/M)';
+    ctrl_applied_3(i,1:nu/M) = ctrl(2*nu/M+1:3*nu/M)';
     % RECEIVE THE CURRENT STATE OF THE CF FROM PYTHON CODE VIA ROS
     
     implementedX = [implementedX, x0];
@@ -177,8 +180,10 @@ for i = 1 : nsim
     
 end
 
-
-dlmwrite('testinputs.txt',ctrl_applied);
+% Write to text file to be read by Python for OL Control
+dlmwrite('testinputs1.txt',ctrl_applied_1);
+dlmwrite('testinputs2.txt',ctrl_applied_2);
+dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T) % for non-mpc
