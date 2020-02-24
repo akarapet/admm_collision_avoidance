@@ -1,21 +1,5 @@
 function admm_visualise_osqp (r,x,N,T)
 
-
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf1.bag');
-bagselect1 = select(bag, 'Topic', '/CF1_position');
-
-Z = timeseries(bagselect1,'Z');
-Y = timeseries(bagselect1,'Y');
-X = timeseries(bagselect1,'X');
-
-cf1x = X.data;
-cf1y = Y.data;
-
-cf1x_plot = [];
-cf1y_plot = [];
-
-[m,n] = size(cf1x);
-
 x_1_plot = [];
 y_1_plot = [];
 
@@ -63,17 +47,12 @@ for k = 1:(N+1)
     x_3_plot = [x_3_plot, x(2*nx+1+(k-1)*M*nx)];
     y_3_plot = [y_3_plot, x(2*nx+nu+(k-1)*M*nx)];
     
-    % Real CF for the last 10 seconds
-    cf1x_plot = [cf1x_plot,cf1x(k+m-110)];
-    cf1y_plot = [cf1y_plot, cf1y(k+m-110)];
-    
 
-
-    p = plot(x_1_plot,y_1_plot,'g',x_2_plot,y_2_plot,'b',x_3_plot,y_3_plot,'r',cf1x_plot,cf1y_plot,'m');
+    p = plot(x_1_plot,y_1_plot,'g',x_2_plot,y_2_plot,'b',x_3_plot,y_3_plot,'r');
     hold on
     
     
-    plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*',cf1x(k+m-110),cf1y(k+m-110),'m*')
+    plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*');
     hold off
     
     legend('off')
@@ -103,6 +82,6 @@ end
 % Y.Time = Y.Time - bag.StartTime;
 % X.Time = X.Time - bag.StartTime;
 
-legend(p,'Agent 1','Agent 2','Agent 3', 'CrazyFlie 1')
+legend(p,'Agent 1','Agent 2','Agent 3');
 
 end

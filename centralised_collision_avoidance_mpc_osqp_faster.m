@@ -59,7 +59,7 @@ end
 V = kron(AK_matrix, d);
 
 % Prediction horizon
-N = 50;
+N = 10;
 
 % Cast MPC problem to a QP: x = (x(0),x(1),...,x(N),u(0),...,u(N-1))
 
