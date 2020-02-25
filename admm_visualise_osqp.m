@@ -1,4 +1,4 @@
-function admm_visualise_osqp (r,x,N,T)
+function admm_visualise_osqp (r,x,N,T,nx,nu)
 
 x_1_plot = [];
 y_1_plot = [];
@@ -10,8 +10,7 @@ x_3_plot =[];
 y_3_plot =[];
 
 M = 3;
-nu = 2;
-nx = 6;
+
 %[m n] = size(r);
     
 figure;
@@ -33,7 +32,7 @@ for k = 1:(N+1)
     
     % initial point
    
-    plot(x(1),x(2),'ro',x(7),x(8),'ro',x(13),x(14),'ro')
+    plot(x(1),x(2),'ro',x(nx+1),x(nx+2),'ro',x(nx*2+1),x(nx*2+2),'ro')
     
     hold on
     

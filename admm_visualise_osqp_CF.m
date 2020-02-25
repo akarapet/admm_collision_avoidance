@@ -1,13 +1,13 @@
-function admm_visualise_osqp (r,x,N,T)
+function admm_visualise_osqp (r,x,N,T,nx,nu)
 
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf1_swarm.bag');
+bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf1.bag');
 bagselect1 = select(bag, 'Topic', '/CF1_position');
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf2_swarm.bag');
+bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf2.bag');
 bagselect2 = select(bag, 'Topic', '/CF1_position');
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf3_swarm.bag');
+bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf3.bag');
 bagselect3 = select(bag, 'Topic', '/CF1_position');
 
 Y = timeseries(bagselect1,'Y');
@@ -49,8 +49,7 @@ x_3_plot =[];
 y_3_plot =[];
 
 M = 3;
-nu = 2;
-nx = 6;
+
 %[m n] = size(r);
     
 figure;
@@ -59,7 +58,7 @@ figure;
 pause on
 
 % estimated from python code
-m = 172
+m = 172;
  
 for k = 1:(N+1)
     
@@ -74,7 +73,7 @@ for k = 1:(N+1)
     
     % initial point
    
-    plot(x(1),x(2),'ro',x(7),x(8),'ro',x(13),x(14),'ro')
+    plot(x(1),x(2),'ro',x(nx+1),x(nx+2),'ro',x(2*nx+1),x(2*nx+2),'ro')
     
     hold on
     

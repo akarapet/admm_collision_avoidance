@@ -11,6 +11,7 @@ A = [1 0 0.09629 0 0 0.03962;
      
 B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
 
+
 T = 0.1;
 M = 3; % Number of agents
 
@@ -42,7 +43,7 @@ QN = sparse(blkdiag(QN,QN,QN));
 delta = 0.32; % Inter-agent distance 
 
 % Transformation matrix V creation
-d = [eye(2),zeros(nu/M,nu-nu/M)];
+d = [eye(2),zeros(nu/M,nx/M-nu/M)];
 kron_mat = [ones(M-1,1),-1*eye(M-1) ];
 
 AK_matrix = kron_mat;
@@ -80,7 +81,7 @@ ueq = leq;
 prob = osqp;
 
 % augmented non_zero matrix so that we setup the full (258 x 258) problem
-G = [ones(nu,nu/M),zeros(nu,nu-nu/M)];
+G = [ones(nu,nu/M),zeros(nu,nx/M-nu/M)];
 A_augment = kron([zeros(N,1),eye(N)],[G,G,G]);
 A_augment(N*nu,N*nu+(N+1)*nx) = 0;
 
@@ -186,8 +187,8 @@ dlmwrite('testinputs2.txt',ctrl_applied_2);
 dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
-%admm_visualise_osqp (r,res.x,N,T) % for non-mpc
-admm_visualise_osqp_CF(r,implementedX,nsim,T) % for mpc
+%admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
+admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     

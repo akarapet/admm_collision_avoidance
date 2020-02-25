@@ -74,7 +74,7 @@ Sum = sumblk('e = r-y',9);
 CL_sys = connect(G_sys,K_sys,Sum,'r','y');
 
 %discretize the system
-CL_sysd = c2d(CL_sys,0.02);
+CL_sysd = c2d(CL_sys,0.1);
 
 TF = minreal(zpk(CL_sys));
 
