@@ -10,7 +10,7 @@ A = [    1 0 0.09629 0 0 0.03962     0 0   0.00015 0;
          0 0 0 0.1932 0.4524 0       -0.0077 -0.00125 0 0;
          0 0 -0.1932 0 0 0.4524      0 0     0.0077 0.00125;
          0 0  0 -0.09629  0.03962 0   0.9999 0     0 0;
-         0 0  0 -5.384    0 15.29     02149 0.9861  0 0;
+         0 0  0 -5.384    0 15.29     0.2149 0.9861  0 0;
          0 0  -0.09629 0  0 -0.03962  0 0     0.9999 0;
          0 0   -5.384 0   0 -15.29   0 0     0.2149 0.9861
          ];
@@ -30,15 +30,16 @@ nu = M*2; % Number of inputs
 
 % MPC data
 Q = eye(nu/M)*10;
-R = eye(nu/M)*7;
+Q = blkdiag(Q,eye(nu/M)*0);
+R = eye(nu/M)*13;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
 % Get the terminal weight matrix QN by solving the discrete LQR equation
 [K,QN,e] = dlqr(A,B,Qf,R);
 
 % Initial and reference states
-r = [0.5;1;0;0;0;0;0;0;0;0; 0;0.5;0;0;0;0;0;0;0;0; 0;0.5;0;0;0;0;0;0;0;0;];
-x0 = [0.5;0;0;0;0;0;0;0;0;00;  1;0.5;0;0;0;0;0;0;0;0; 1;1.5;0;0;0;0;00;00;0;0;];
+r = [0.6;1.2;0;0;0;0;0;0;0;0; 0;0.6;0;0;0;0;0;0;0;0; 0;0.6;0;0;0;0;0;0;0;0;];
+x0 = [0.6;0;0;0;0;0;0;0;0;0;  1.2;0.6;0;0;0;0;0;0;0;0; 1.2;1.5;0;0;0;0;00;00;0;0;];
 
 % r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
 % x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
@@ -48,7 +49,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.4; % Inter-agent distance 
+delta = 0.36; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nx/M-nu/M)];
@@ -93,13 +94,22 @@ G = [ones(nu,nu/M),zeros(nu,nx/M-nu/M)];
 A_augment = kron([zeros(N,1),eye(N)],[G,G,G]);
 A_augment(N*nu,N*nu+(N+1)*nx) = 0;
 
+% - state and input constraints
+
+% state
+st_M = [zeros(2,2),eye(2),zeros(2,nx/M-4)];
+A_augment = [A_augment;kron(eye(N+1),blkdiag(st_M,st_M,st_M)),zeros(M*2*(N+1),nu*N)];
+% input
 A_augment = [A_augment;zeros(N*nu,(N+1)*nx),eye(N*nu)];
 
-% - input and state constraints
+
 A = [Aeq;A_augment];
 
-umin = ones(nu,1)*-0.7;
-umax = ones(nu,1)*0.7;
+umin = ones(nu,1)*-1.0;
+umax = ones(nu,1)*1.0;
+
+xmin = ones(M*2*(N+1),1)*-1.0;
+xmax = ones(M*2*(N+1),1)*1.0;
 
 lower_inf = ones(N*nu,1)*(-inf);
 upper_inf = ones(N*nu,1)*inf;
@@ -107,8 +117,8 @@ upper_inf = ones(N*nu,1)*inf;
 min_input = repmat(umin,N,1);
 max_input = repmat(umax,N,1);
 
-l = [leq;lower_inf; min_input];
-u = [ueq;upper_inf; max_input];
+l = [leq;lower_inf;xmin; min_input];
+u = [ueq;upper_inf;xmax; max_input];
 
 % get the indices of non-zero values in new A
 [row,col,v] = find(A);
@@ -143,29 +153,15 @@ for i = 1 : nsim
         delta_x_bar = (kron(eye(N+1),V) * x_bar); % augmented delta x_bar 
         
         % Get the current A_ineq and l_ineq
-        [A_ineq,l_ineq ]= eta_maker(delta_x_bar,N,M,nu,nx,V,delta);
+        [A_ineq,l_ineq ]= eta_maker(delta_x_bar,N,M,nu,nx,V,delta,st_M);
         
         A_new = [Aeq;A_ineq];
         prob.update('Ax',A_new(idx));
         
-        l_new = [leq;l_ineq;min_input];
-        u_new = [ueq;upper_inf;max_input];
+        l_new = [leq;l_ineq;xmin;min_input];
+        u_new = [ueq;upper_inf;xmax;max_input];
         prob.update('l',l_new,'u',u_new);
         
-%         while 1
-%             res = prob.solve();
-%             if res.info.status_val == -3
-%                 
-%                 kappa = kappa+1;
-%                 Rnew = eye(nu/M)*kappa;
-%                 Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
-%                 Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
-%                 
-%                 prob.update('Px',nonzeros(triu(Pnew)));
-%                 continue;
-%             end
-%             break;
-%         end
         
         res = prob.solve();
         x = res.x(1:nx*(N+1));
@@ -179,12 +175,13 @@ for i = 1 : nsim
     ctrl_applied_2(i,1:nu/M) = ctrl(nu/M+1:2*nu/M)';
     ctrl_applied_3(i,1:nu/M) = ctrl(2*nu/M+1:3*nu/M)';
     % RECEIVE THE CURRENT STATE OF THE CF FROM PYTHON CODE VIA ROS
+   
     
     implementedX = [implementedX, x0];
     % Update initial state
     leq(1:nx) = -x0;
     ueq(1:nx) = -x0;
-    prob.update('l', [leq;l_ineq;min_input],'u', [ueq;upper_inf;max_input])
+    prob.update('l', [leq;l_ineq;xmin;min_input],'u', [ueq;upper_inf;xmax;max_input])
     
 end
 
@@ -195,9 +192,9 @@ dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
-admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+admm_visualise_osqp(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
-function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
+function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta,st_M)
     
     %placeholders
     A_ineq = zeros(N*nu,N*nu+(N+1)*nx);
@@ -224,6 +221,6 @@ function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
        
     end
     
-   A_ineq = [A_ineq;zeros(N*nu,(N+1)*nx),eye(N*nu)]; 
+   A_ineq = [A_ineq;kron(eye(N+1),blkdiag(st_M,st_M,st_M)),zeros(M*2*(N+1),nu*N);zeros(N*nu,(N+1)*nx),eye(N*nu)]; 
     
 end
