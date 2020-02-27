@@ -31,15 +31,15 @@ nu = M*2; % Number of inputs
 % MPC data
 Q = eye(nu/M)*10;
 Q = blkdiag(Q,eye(nu/M)*0);
-R = eye(nu/M)*13;
+R = eye(nu/M)*14;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
 % Get the terminal weight matrix QN by solving the discrete LQR equation
 [K,QN,e] = dlqr(A,B,Qf,R);
 
 % Initial and reference states
-r = [0.6;1.2;0;0;0;0;0;0;0;0; 0;0.6;0;0;0;0;0;0;0;0; 0;0.6;0;0;0;0;0;0;0;0;];
-x0 = [0.6;0;0;0;0;0;0;0;0;0;  1.2;0.6;0;0;0;0;0;0;0;0; 1.2;1.5;0;0;0;0;00;00;0;0;];
+r = [0.5;1.0;0;0;0;0;0;0;0;0; 0;0.5;0;0;0;0;0;0;0;0; 0;0.5;0;0;0;0;0;0;0;0;];
+x0 = [0.5;0;0;0;0;0;0;0;0;0;  1.0;0.5;0;0;0;0;0;0;0;0; 1.0;1.5;0;0;0;0;00;00;0;0;];
 
 % r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
 % x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
@@ -49,7 +49,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.36; % Inter-agent distance 
+delta = 0.32; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nx/M-nu/M)];
@@ -192,7 +192,7 @@ dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
-admm_visualise_osqp(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta,st_M)
     
