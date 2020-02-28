@@ -25,7 +25,7 @@ nu = M*2; % Number of inputs
 
 % MPC data
 Q = eye(nu/M)*10;
-Q = blkdiag(Q,eye(nu/M)*0);
+Q = blkdiag(Q,eye(nu/M)*15);
 R = eye(nu/M)*13;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
@@ -33,7 +33,7 @@ Qf = Q; Qf(nx/M,nx/M) = 0;
 [K,QN,e] = dlqr(A,B,Qf,R);
 
 % Initial and reference states
-r = [0.6;1.2;0;0;0;0; 1.2;1.2;0;0;0;0; 0;0.6;0;0;0;0];
+r = [0.6;1.2;0;0;0;0; 0.0;0.6;0;0;0;0; 0;0.6;0;0;0;0];
 x0 = [0.6;0;0;0;0;0;  1.2;0.6;0;0;0;0; 1.2;1.5;0;0;0;0;];
 
 % Augment the matrices for the 3 agent problem
@@ -41,7 +41,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.5; % Inter-agent distance 
+delta = 0.32; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nx/M-nu/M)];
@@ -146,20 +146,6 @@ for i = 1 : nsim
         u_new = [ueq;upper_inf;max_input];
         prob.update('l',l_new,'u',u_new);
         
-%         while 1
-%             res = prob.solve();
-%             if res.info.status_val == -3
-%                 
-%                 kappa = kappa+1;
-%                 Rnew = eye(nu/M)*kappa;
-%                 Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
-%                 Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
-%                 
-%                 prob.update('Px',nonzeros(triu(Pnew)));
-%                 continue;
-%             end
-%             break;
-%         end
         
         res = prob.solve();
         x = res.x(1:nx*(N+1));
