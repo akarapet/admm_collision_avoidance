@@ -41,7 +41,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.32; % Inter-agent distance 
+delta = 0.45; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nx/M-nu/M)];
