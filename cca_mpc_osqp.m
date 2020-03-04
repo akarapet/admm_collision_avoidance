@@ -41,7 +41,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.45; % Inter-agent distance 
+delta = 0.32; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nx/M-nu/M)];
@@ -175,7 +175,7 @@ dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
-admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+admm_visualise_osqp(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     
