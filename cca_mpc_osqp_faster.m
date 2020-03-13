@@ -2,16 +2,16 @@ clear, clc
 
 % Discrete time model of a quadcopter
 % Obtained from formulate_system for T = 0.02
-A =     [1 0 0.01997 0 0 0.001884;
-         0 1 0 0.01997 -0.001884 0;
-         0 0 0.995 0 0 0.1845;
-         0 0 0 0.995 -0.1845 0;
-         0 0 0  0.04952 0.8816 0;
-         0 0 -0.04952 0 0 0.8816];
+A =     [1 0 0.0495 0 0 0.01106;
+         0 1 0 0.0495 -0.01106 0;
+         0 0 0.9708 0 0 0.4187;
+         0 0 0 0.9708 -0.4187 0;
+         0 0 0  0.1133 0.7113 0;
+         0 0 -0.1133 0 0 0.7113];
      
-B = [3.331e-05 0; 0 3.331e-05; 0.00495 0;0  0.00495;0 -0.04952;0.04952 0];
+B = [0.0004989 0; 0 0.0004989; 0.02922 0;0  0.02922;0 -0.1133;-0.1133 0];
 
-T = 0.02;
+T = 0.05;
 M = 3; % Number of agents
 
 
@@ -24,7 +24,8 @@ nu = M*2; % Number of inputs
 
 % MPC data
 Q = eye(nu/M)*10;
-R = eye(nu/M)*13;
+Q = blkdiag(Q,eye(nu/M)*11)
+R = eye(nu/M)*11;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
 % Get the terminal weight matrix QN by solving the discrete LQR equation
@@ -39,7 +40,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.3; % Inter-agent distance 
+delta = 0.33; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nu-nu/M)];
@@ -59,7 +60,7 @@ end
 V = kron(AK_matrix, d);
 
 % Prediction horizon
-N = 10;
+N = 20;
 
 % Cast MPC problem to a QP: x = (x(0),x(1),...,x(N),u(0),...,u(N-1))
 
@@ -119,7 +120,7 @@ x = res.x(1:nx*(N+1));
 % prob.update('Px',nonzeros(triu(Pnew)));
 
 % Simulate in closed loop
-nsim = 500;
+nsim = 200;
 nit = 2;
 implementedX = x0; % a variable for storing the states for simulation
 ctrl_applied =[]; % agent 1
@@ -142,20 +143,6 @@ for i = 1 : nsim
         u_new = [ueq;upper_inf;max_input];
         prob.update('l',l_new,'u',u_new);
         
-%         while 1
-%             res = prob.solve();
-%             if res.info.status_val == -3
-%                 
-%                 kappa = kappa+1;
-%                 Rnew = eye(nu/M)*kappa;
-%                 Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
-%                 Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
-%                 
-%                 prob.update('Px',nonzeros(triu(Pnew)));
-%                 continue;
-%             end
-%             break;
-%         end
         
         res = prob.solve();
         x = res.x(1:nx*(N+1));
@@ -184,7 +171,7 @@ dlmwrite('testinputs.txt',ctrl_applied);
 
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T) % for non-mpc
-admm_visualise_osqp (r,implementedX,nsim,T) % for mpc
+admm_visualise_osqp (r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     
