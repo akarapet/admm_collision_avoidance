@@ -1,13 +1,13 @@
 function admm_visualise_osqp (r,x,N,T,nx,nu)
 
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/ideal/cf1_swarm.bag');
+bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf1.bag');
 bagselect1 = select(bag, 'Topic', '/CF1_position');
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/ideal/cf2_swarm.bag');
+bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf2.bag');
 bagselect2 = select(bag, 'Topic', '/CF1_position');
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/ideal/cf3_swarm.bag');
+bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf3.bag');
 bagselect3 = select(bag, 'Topic', '/CF1_position');
 
 Y = timeseries(bagselect1,'Y');
