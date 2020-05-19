@@ -5,20 +5,13 @@ clear all
 
 % Model data
 T = 0.1; 
-% A = [1 0 T 0;
-%      0 1 0 T;
-%      0 0 1 0;
-%      0 0 0 1];
-% B = [0 0;0 0;T 0;0 T];
-A = [1 0 0.09629 0 0 0.03962;
-         0 1 0 0.09629 -0.03962 0;
-         0 0 0.8943 0 0 0.7027;
-         0 0 0 0.8943 -0.7027 0;
-         0 0 0 0.1932 0.4524 0;
-         0 0 -0.1932 0 0 0.4524];
-B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
+A = [1 0 T 0;
+     0 1 0 T;
+     0 0 1 0;
+     0 0 0 1];
+B = [0 0;0 0;T 0;0 T];
 
-nx = 6; % Number of states
+nx = 4; % Number of states
 nu = 2; % Number of inputs
 
 % MPC data
@@ -27,22 +20,24 @@ Q = eye(nu)*14;
 R = eye(nu)*5;
 
 % Number of iterations
-it = 15;
+it = 35;
 
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
-delta = 0.2; % Inter-agent distance 
-rho = 15;
+delta = 0.35; % Inter-agent distance 
+rho = 40;
 
 
 % position reference setpoint
 % 
 %   r =[0.5  0    0;
 %       1  0.5  0.5;];
-r(1,:) =[0.5,1];
-r(2,:) =[0,0.5];
-r(3,:) =[0,0.5];
-
+% r(1,:) =[0.5,1];
+% r(2,:) =[0,0.5];
+% r(3,:) =[0,0.5];
+r(1,:) =[1,1.4];
+r(2,:) =[0.6,0.4];
+r(3,:) =[0,0.9];
 % w and w_from_j
 
 wc = cell(M,N);
@@ -71,8 +66,8 @@ for i = 1:M
             % w_to_j
             %w_to_jc{i,j,k} = [0.1;0.1];
             
-            lambda_from_j{i,j,k} = [5;5];
-            lambda_to_j{i,j,k} = [5;5];
+            lambda_from_j{i,j,k} = [0;0];
+            lambda_to_j{i,j,k} = [0;0];
         end
     end
     
@@ -80,22 +75,23 @@ end
 
 for k = 1:N
     
-    lambda{1,k} = [5;5];
-    lambda{2,k} = [5;5];
-    lambda{3,k} = [5;5];
+    lambda{1,k} = [0;0];
+    lambda{2,k} = [0;0];
+    lambda{3,k} = [0;0];
     
 end
 
 % initial conditions
 
 
-x_0 = [0.5   1   1 ;
-       0   0.5 1.5 ; 
+% x_0 = [0.5   1   1 ;
+%        0   0.5 1.5 ; 
+%        0     0   0 ;
+%        0     0   0];
+x_0 = [0   0.2   1.0 ;
+       0.5   0.9 0.3 ; 
        0     0   0 ;
-       0     0   0
-       0     0   0
-       0     0   0];
-   
+       0     0   0];   
 ops = sdpsettings('verbose',0);
 
 % initialise w-s
@@ -148,8 +144,11 @@ for i = 1:M
     
      for k = 1:N
          
-         J = (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-             (x{i,k}(1:nu) - ref{i,k}) + a{i,k}'* R * a{i,k};
+         %J = (x{i,k}(1:nu) - ref{i,k})'* Q * ...
+             %(x{i,k}(1:nu) - ref{i,k}) + a{i,k}'* R * a{i,k};
+
+         J = (x{i,k}(1:nu) - r(i,:)')'* Q * ...
+             (x{i,k}(1:nu) - r(i,:)') + a{i,k}'* R * a{i,k};         
          
          J_1 = lambda{i,k}'* (x{i,k}(1:nu) - wc{i,k});
           
@@ -268,11 +267,15 @@ end
 
 s1 = sprintf('iteration: %d \n', m );
 disp(s1);
-for k = 1:N
-   sum = sum + abs(value(norm(x{1,k}(1:nu) - xprev{1,k}(1:nu))));
+
+sum = 0;
+for i =1:M
+    for k = 1:N
+        sum = sum + (value(x{i,k+1}(1:2))-r(i,:)')'*Q*(value(x{i,k+1}(1:2))-r(i,:)')+value(a{i,k})'*R*value(a{i,k});
+    end
 end
 
-s2 = sprintf('error: %d \n', sum);
+s2 = sprintf('value: %d \n', sum);
 disp(s2);
 
 for k =1:N

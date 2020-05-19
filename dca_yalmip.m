@@ -5,36 +5,41 @@ clear all
 
 % Model data
 T = 0.1; 
-A = [1 0 T 0;
-     0 1 0 T;
-     0 0 1 0;
-     0 0 0 1];
-B = [0 0;0 0;T 0;0 T];
 
-nx = 4; % Number of states
+A = [1 0 0.09629 0 0 0.03962;
+         0 1 0 0.09629 -0.03962 0;
+         0 0 0.8943 0 0 0.7027;
+         0 0 0 0.8943 -0.7027 0;
+         0 0 0 0.1932 0.4524 0;
+         0 0 -0.1932 0 0 0.4524];
+     
+B = [0.003709 0; 0 0.003709;0.1057 0;0 0.1057;0 -0.1932;0.1932 0];
+
+nx = 6; % Number of states
 nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*14;
-R = eye(nu)*5;
+Q = eye(nu)*10;
+
+R = eye(nu)*13;
 
 % Number of iterations
-it = 15;
+it = 1;
 
 M = 3; % Number of agents
 N_j = M-1; % Number of neighbours 
-delta = 0.2; % Inter-agent distance 
-rho = 15;
+delta = 0.33; % Inter-agent distance 
+rho = 2;
 
 
 % position reference setpoint
 % 
 %   r =[0.5  0    0;
 %       1  0.5  0.5;];
-r(1,:) =[0.5,1];
-r(2,:) =[0,0.5];
-r(3,:) =[0,0.5];
+r(1,:) =[0.6,1.2];
+r(2,:) =[0,0.6];
+r(3,:) =[0,0.6];
 
 % w and w_from_j
 
@@ -64,8 +69,8 @@ for i = 1:M
             % w_to_j
             %w_to_jc{i,j,k} = [0.1;0.1];
             
-            lambda_from_j{i,j,k} = [5;5];
-            lambda_to_j{i,j,k} = [5;5];
+            lambda_from_j{i,j,k} = [5;5]*0;
+            lambda_to_j{i,j,k} = [5;5]*0;
         end
     end
     
@@ -73,19 +78,21 @@ end
 
 for k = 1:N
     
-    lambda{1,k} = [5;5];
-    lambda{2,k} = [5;5];
-    lambda{3,k} = [5;5];
+    lambda{1,k} = [5;5]*0;
+    lambda{2,k} = [5;5]*0;
+    lambda{3,k} = [5;5]*0;
     
 end
 
 % initial conditions
 
 
-x_0 = [0.5   1   1 ;
-       0   0.5 1.5 ; 
-       0     0   0 ;
-       0     0   0];
+x_0 = [0.6     1.2   1.2 ;
+       0     0.612   1.5 ; 
+       0       0     0 ;
+       0       0     0
+       0       0     0
+       0       0     0];
    
 ops = sdpsettings('verbose',0);
 
@@ -99,7 +106,7 @@ for i = 1:M
         objective = objective + (x{i,k}(1:nu)-r(i,:)')'* Q * ...
             (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};
         
-        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{i,1} == x_0(:,i),x{i,N+1}(3:4) == [0;0],a{i,N} == [0;0]];       
+        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{i,1} == x_0(:,i),-1 <= a{i,k}(1) <= 1,-1 <= a{i,k}(2) <= 1];       
     end
     
     optimize(constraints,objective);
@@ -116,8 +123,8 @@ for i = 1:M
  for k = 1:N 
    for j = 1:M
       if i~=j
-         w_from_jc{i,j,k} = value(x{j,k}(1:nu));
-         w_to_jc{i,j,k} = value(x{j,k}(1:nu));
+         w_from_jc{i,j,k} = value(x{j,k}(1:nu))*0;
+         w_to_jc{i,j,k} = value(x{j,k}(1:nu))*0;
       end
    end 
  end
@@ -139,11 +146,8 @@ for i = 1:M
     
      for k = 1:N
          
-         %J = (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-             %(x{i,k}(1:nu) - ref{i,k}) + a{i,k}'* R * a{i,k};
-
          J = (x{i,k}(1:nu) - r(i,:)')'* Q * ...
-             (x{i,k}(1:nu) - r(i,:)') + a{i,k}'* R * a{i,k};         
+             (x{i,k}(1:nu) - r(i,:)') + a{i,k}'* R * a{i,k};
          
          J_1 = lambda{i,k}'* (x{i,k}(1:nu) - wc{i,k});
           
@@ -157,11 +161,11 @@ for i = 1:M
             end 
          end
          
-         constraints_1 = [constraints_1, x{i,k+1} == A*x{i,k} + B*a{i,k}];%,x{i,k}(1)<=2,x{i,k}(1)>=-2,x{i,k}(2)<=2,x{i,k}(2)>=-2];
+         constraints_1 = [constraints_1, x{i,k+1} == A*x{i,k} + B*a{i,k},-1 <= a{i,k}(1) <= 1,-1 <= a{i,k}(2) <= 1];%,x{i,k}(1)<=2,x{i,k}(1)>=-2,x{i,k}(2)<=2,x{i,k}(2)>=-2];
          objective_1 = objective_1 + J + J_1 + J_2 + J_3;
       end
       
-      optimize([constraints_1, x{i,1} == x_0(:,i),x{i,N}(3:4) == [0;0],a{i,N} == [0;0]],objective_1,ops);
+      optimize([constraints_1, x{i,1} == x_0(:,i)],objective_1,ops);
     
 end
 
@@ -213,10 +217,10 @@ for i = 1:M
           
 %               eta_ij = (wc{i,k} - w_to_jc{i,j,k}) * 1/norm(wc{i,k} - w_to_jc{i,j,k});
 %               h_ij = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(wc{i,k} - w_to_jc{i,j,k})) - delta;
-% 
+ 
               eta_ij = (xc{i,k}(1:nu) - xc{j,k}(1:nu)) * 1/norm(xc{i,k}(1:nu) - xc{j,k}(1:nu));
               h_ij = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(xc{i,k}(1:nu) - xc{j,k}(1:nu))) - delta;
-%               
+               
 %              constraints_2 = [constraints_2, norm(wc{i,k} - w_to_jc{i,j,k}) + h_ij >= 0];
                constraints_2 = [constraints_2, norm(xc{i,k}(1:nu) - xc{j,k}(1:nu)) + h_ij >= 0];
           end

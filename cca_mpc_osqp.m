@@ -25,7 +25,7 @@ nu = M*2; % Number of inputs
 
 % MPC data
 Q = eye(nu/M)*10;
-Q = blkdiag(Q,eye(nu/M)*15);
+Q = blkdiag(Q,eye(nu/M)*15); %15
 R = eye(nu/M)*13;
 Qf = Q; Qf(nx/M,nx/M) = 0;
 
@@ -33,8 +33,11 @@ Qf = Q; Qf(nx/M,nx/M) = 0;
 [K,QN,e] = dlqr(A,B,Qf,R);
 
 % Initial and reference states
-r = [0.6;1.2;0;0;0;0; 0.0;0.6;0;0;0;0; 0;0.6;0;0;0;0];
+r  = [0.6;1.2;0;0;0;0; 0.0;0.6;0;0;0;0; 0;0.6;0;0;0;0];
 x0 = [0.6;0;0;0;0;0;  1.2;0.6;0;0;0;0; 1.2;1.5;0;0;0;0;];
+
+% r  = [1;1.4;0;0;0;0; 0.6;0.4;0;0;0;0; 0;0.9;0;0;0;0];
+% x0 = [0;0.5;0;0;0;0;  0.2;0.9;0;0;0;0; 1.0;0.3;0;0;0;0;];
 
 % Augment the matrices for the 3 agent problem
 Q  = sparse(blkdiag(Qf,Qf,Qf));
@@ -112,6 +115,7 @@ prob.setup(P, q, A, l, u,'warm_start', true,'verbose',true);
 
 
 res = prob.solve();
+oldobjective = res.info.obj_val;
 x = res.x(1:nx*(N+1));
 
 % kappa = 19;
@@ -129,7 +133,7 @@ ctrl_applied_2 =[]; % agent 2
 ctrl_applied_3 =[]; % agent 3
 
 for i = 1 : nsim
-
+    tic
     % the linearisation over previous solution x_bar
     for it = 1:nit
         
@@ -145,12 +149,17 @@ for i = 1 : nsim
         l_new = [leq;l_ineq;min_input];
         u_new = [ueq;upper_inf;max_input];
         prob.update('l',l_new,'u',u_new);
-        
-        
-        res = prob.solve();
+                 
+         res = prob.solve();
+%         it
+%         if (abs(oldobjective-res.info.obj_val) < abs(oldobjective*0.005))
+%             break
+%         end
+%         oldobjective = res.info.obj_val;
+%         
         x = res.x(1:nx*(N+1));
     end
-    
+    toc
     % Apply first control input to the plant
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
     x0 = Ad*x0 + Bd*ctrl;
@@ -160,7 +169,7 @@ for i = 1 : nsim
     ctrl_applied_3(i,1:nu/M) = ctrl(2*nu/M+1:3*nu/M)';
     % RECEIVE THE CURRENT STATE OF THE CF FROM PYTHON CODE VIA ROS
     
-    implementedX = [implementedX, x0];
+    implementedX = [implementedX; x0];
     % Update initial state
     leq(1:nx) = -x0;
     ueq(1:nx) = -x0;
@@ -176,6 +185,17 @@ dlmwrite('testinputs3.txt',ctrl_applied_3);
 %Visualise
 %admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
 admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+
+
+% objective calculation
+
+finx = res.x(nx+1:(N+1)*nx);
+finu = res.x((N+1)*nx+1:end);
+finQ = blkdiag(kron(speye(N-1), Q),QN);
+finR = kron(speye(N), R);
+finr = repmat(r, N, 1);
+
+sum = (finx-finr)'*finQ*(finx-finr)+finu'*finR*finu;
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     
@@ -195,12 +215,13 @@ function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
             eta_M_k(i,(i-1)*nu/M+1:(i-1)*nu/M+nu/M) = eta_ij_k; % populate matrix eta_M
             
             l_ineq((k-2)*nu+i) = delta + eta_ij_k * delta_x_k((i-1)*nu/M+1:i*nu/M) - x_bar_norm; % fill in l_ij
-            
+           
         end
         
         % Populate the inequality matrix, note that  (60 x 60) final part
         % of it will remain 0-s for the inputs
         A_ineq( (k-2)*nu+1 : (k-1)*nu , (k-1)*nx+1 : k*nx ) = eta_M_k*diff_matrix; 
+        
        
     end
     

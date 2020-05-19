@@ -3,7 +3,7 @@
 
 yalmip('clear')
 clear all
-formulate_full_system
+%formulate_full_system
 
 
 % Model data
@@ -27,12 +27,12 @@ nu = 2; % Number of inputs
 
 % MPC data
 N = 100;
-Q = eye(nu)*14;
-R = eye(nu)*5;
+Q = eye(nu)*10;
+R = eye(nu)*13;
 
 
 M = 3; % Number of agents
-delta = 0.2; % Inter-agent distance 
+delta = 0.0; % Inter-agent distance 
  
 % initialize the states, reference, control and nominal states
 for i = 1:M
@@ -45,15 +45,21 @@ for i = 1:M
     
 end
 
-r(1,:) =[0.5,1];
-r(2,:) =[0,0.5];
-r(3,:) =[0,0.5];
-
+% r(1,:) =[0.6,1.2];
+% r(2,:) =[0,0.6];
+% r(3,:) =[0,0.6];
+r(1,:) =[1.0,1.4];
+r(2,:) =[0.6,0.4];
+r(3,:) =[0,0.9];
 % initial conditions
 
-x_1_0 = [0.5;0;0;0;0;0];
-x_2_0 = [1;0.5;0;0;0;0];
-x_3_0 = [1;1.5;0;0;0;0];
+% x_1_0 = [0.6;0;0;0;0;0];
+% x_2_0 = [1.2;0.612;0;0;0;0];
+% x_3_0 = [1.2;1.5;0;0;0;0];
+x_1_0 = [0;0.5;0;0;0;0];
+x_2_0 = [0.2;0.9;0;0;0;0];
+x_3_0 = [1.0;0.3;0;0;0;0];
+
 ops = sdpsettings('verbose',0);
 
 
@@ -74,13 +80,13 @@ for i = 1:M
         objective = objective + (x{i,k}(1:nu)-r(i,:)')'* Q * ...
              (x{i,k}(1:nu)-r(i,:)')  + a{i,k}'* R * a{i,k};
         
-        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) == [0;0],x{2,N+1}(3:4) == [0;0],x{3,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0],a{3,N} == [0;0]];       
+        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0];       
     end
    
 end
 
  optimize(constraints,objective);
-
+ oldobjective = value(objective);
     for i =1:M
         
     for k = 1:N
@@ -111,10 +117,10 @@ for k = 1:N
    
     for i = 1:M
         
-        objective = objective  + (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-            (x{i,k}(1:nu)-ref{i,k}) + a{i,k}'* R * a{i,k};
+        objective = objective  + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
+            (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};
         
-        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];
+        constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k},-1 <= a{i,k}(1) <= 1,-1 <= a{i,k}(2) <= 1];
         
         for j = 1:M
         
@@ -133,10 +139,14 @@ for k = 1:N
 end
 
     
-    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) ==[0;0],x{2,N+1}(3:4) == [0;0],x{3,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0],a{3,N} == [0;0]],objective);
+    optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0],objective,ops);
    
     m
-       
+    if (abs(oldobjective-value(objective)) < abs(oldobjective*0.005))
+        break
+    end
+    oldobjective =  value(objective)
+   
 end
 
 

@@ -1,13 +1,13 @@
 function admm_visualise_osqp (r,x,N,T,nx,nu)
 
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf1.bag');
+bag = rosbag('cf1_0.33.bag');
 bagselect1 = select(bag, 'Topic', '/CF1_position');
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf2.bag');
+bag = rosbag('cf2_0.33.bag');
 bagselect2 = select(bag, 'Topic', '/CF1_position');
 
-bag = rosbag('/home/antonis/4YP_Distributed_Control/dist_ws/src/dist_pkg/src/crazyflie-lib-python/examples/dist_swarm/RosBags/cf3.bag');
+bag = rosbag('cf3_0.33.bag');
 bagselect3 = select(bag, 'Topic', '/CF1_position');
 
 Y = timeseries(bagselect1,'Y');
@@ -65,7 +65,20 @@ for k = 1:(N+1)
 
 
     for i = 1:M
-        plot(r(1+(i-1)*nx),r((i-1)*nx+nu),'kx')
+        if i ==1
+            col = '#228B22';
+            a ='gx';
+        elseif i == 2
+            col = 'blue';
+            a = 'bx';
+        else
+            col = 'magenta';
+            a = 'mx';
+        end
+        xlim([-0.2 1.4]) 
+        ylim([-0.2 1.6])        
+        px = plot(r(1+(i-1)*nx),r((i-1)*nx+nu),a,'MarkerSize',13);
+        set(px(1), 'color', col);
         hold on
     end
 
@@ -73,7 +86,8 @@ for k = 1:(N+1)
     
     % initial point
    
-    plot(x(1),x(2),'ro',x(nx+1),x(nx+2),'ro',x(2*nx+1),x(2*nx+2),'ro')
+    po = plot(x(1),x(2),'ro',x(nx+1),x(nx+2),'ro',x(2*nx+1),x(2*nx+2),'ro');
+    set(po(1), 'color', '#228B22');
     
     hold on
     
@@ -98,10 +112,12 @@ for k = 1:(N+1)
     cf3y_plot = [cf3y_plot, cf3y(k+m-110)];
     
     p = plot(x_1_plot,y_1_plot,'g',x_2_plot,y_2_plot,'b',x_3_plot,y_3_plot,'r',cf1x_plot,cf1y_plot,'m',cf2x_plot,cf2y_plot,'m',cf3x_plot,cf3y_plot,'m');
+    set(p(1), 'color', '#228B22');
     hold on
     
     
-    plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*',cf1x(k+m-110),cf1y(k+m-110),'m*',cf2x(k+m-110),cf2y(k+m-110),'m*',cf3x(k+m-110),cf3y(k+m-110),'m*')
+    ps = plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*',cf1x(k+m-110),cf1y(k+m-110),'m*',cf2x(k+m-110),cf2y(k+m-110),'m*',cf3x(k+m-110),cf3y(k+m-110),'m*');
+    set(ps(1), 'color', '#228B22');
     hold off
     
     legend('off')

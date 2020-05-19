@@ -24,7 +24,20 @@ for k = 1:(N+1)
 
 
     for i = 1:M
-        plot(r(1+(i-1)*nx),r((i-1)*nx+nu),'kx')
+        if i ==1
+            col = '#228B22';
+            a ='gx';
+        elseif i == 2
+            col = 'blue';
+            a = 'bx';
+        else
+            col = 'magenta';
+            a = 'mx';
+        end
+        xlim([-0.2 1.4]) 
+        ylim([-0.2 1.6])        
+        px = plot(r(1+(i-1)*nx),r((i-1)*nx+nu),a,'MarkerSize',13);
+        set(px(1), 'color', col);
         hold on
     end
 
@@ -32,7 +45,8 @@ for k = 1:(N+1)
     
     % initial point
    
-    plot(x(1),x(2),'ro',x(nx+1),x(nx+2),'ro',x(nx*2+1),x(nx*2+2),'ro')
+    po = plot(x(1),x(2),'o',x(nx+1),x(nx+2),'bo',x(nx*2+1),x(nx*2+2),'ro');
+    set(po(1), 'color', '#228B22');
     
     hold on
     
@@ -47,11 +61,15 @@ for k = 1:(N+1)
     y_3_plot = [y_3_plot, x(2*nx+nu+(k-1)*M*nx)];
     
 
-    p = plot(x_1_plot,y_1_plot,'g',x_2_plot,y_2_plot,'b',x_3_plot,y_3_plot,'r');
+    p = plot(x_1_plot,y_1_plot,x_2_plot,y_2_plot,x_3_plot,y_3_plot);
+    set(p(1), 'color', '#228B22');
+    set(p(2), 'color', 'blue');
+    set(p(3), 'color', 'red');
     hold on
     
     
-    plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*');
+    ps = plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*');
+    set(ps(1), 'color', '#228B22');
     hold off
     
     legend('off')
@@ -80,7 +98,8 @@ end
 % Z.Time = Z.Time - bag.StartTime;
 % Y.Time = Y.Time - bag.StartTime;
 % X.Time = X.Time - bag.StartTime;
-
+xlabel('x [m]') 
+ylabel('y [m]') 
 legend(p,'Agent 1','Agent 2','Agent 3');
 
 end

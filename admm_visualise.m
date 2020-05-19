@@ -30,15 +30,30 @@ for k = 1:(N+1)
 % plot(r(3,1),r(3,2),'kx')
 
 for i = 1:m
-        plot(r(i,1),r(i,2),'kx')
+        if i ==1
+            col = '#228B22';
+            a ='gx';
+        elseif i == 2
+            col = 'blue';
+            a = 'bx';
+        else
+            col = 'red';
+            a = 'rx';
+        end
+        xlim([-0.2 1.2]) 
+        ylim([0.2 1.6])
+        px = plot(r(i,1),r(i,2),a,'MarkerSize',13);
+        set(px(1), 'color', col);
         hold on
 end
+
 
 hold on
 
 % initial point
 %plot(x_1_0(1),x_1_0(2),'ro',x_2_0(1),x_2_0(2),'ro',x_3_0(1),x_3_0(2),'ro')
-plot(value(x{1,1}(1)),value(x{1,1}(2)),'ro',value(x{2,1}(1)),value(x{2,1}(2)),'ro',value(x{3,1}(1)),value(x{3,1}(2)),'ro')
+po = plot(value(x{1,1}(1)),value(x{1,1}(2)),'o',value(x{2,1}(1)),value(x{2,1}(2)),'bo',value(x{3,1}(1)),value(x{3,1}(2)),'ro');
+set(po(1), 'color', '#228B22');
 
 hold on
     
@@ -54,13 +69,17 @@ hold on
     
 
 
-    p = plot(x_1_plot,y_1_plot,'g',x_2_plot,y_2_plot,'b',x_3_plot,y_3_plot,'r');
+    %p = plot(x_1_plot,y_1_plot,'m',x_2_plot,y_2_plot,'b',x_3_plot,y_3_plot,'r');
+    p = plot(x_1_plot,y_1_plot,x_2_plot,y_2_plot,x_3_plot,y_3_plot);
+    set(p(1), 'color', '#228B22');
+    set(p(2), 'color', 'blue');
+    set(p(3), 'color', 'red');
     hold on
-    
     %legend('Agent 1','Agent 2','Agent3')
     
     
-    plot(value(x{1,k}(1)),value(x{1,k}(2)),'g*',value(x{2,k}(1)),value(x{2,k}(2)),'b*',value(x{3,k}(1)),value(x{3,k}(2)),'r*')
+    ps = plot(value(x{1,k}(1)),value(x{1,k}(2)),'g*',value(x{2,k}(1)),value(x{2,k}(2)),'b*',value(x{3,k}(1)),value(x{3,k}(2)),'r*');
+    set(ps(1), 'color', '#228B22');
     hold off
     
     legend('off')
@@ -71,6 +90,8 @@ hold on
     pause(T)
 end
 
-legend(p,'Agent 1','Agent 2','Agent3')
+xlabel('x [m]') 
+ylabel('y [m]') 
+legend(p,'Agent 1','Agent 2','Agent 3')
 
 end

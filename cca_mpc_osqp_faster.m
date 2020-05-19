@@ -32,8 +32,9 @@ Qf = Q; Qf(nx/M,nx/M) = 0;
 [K,QN,e] = dlqr(A,B,Qf,R);
 
 % Initial and reference states
-r = [0.5;1;0;0;0;0; 0;0.5;0;0;0;0; 0;0.5;0;0;0;0];
-x0 = [0.5;0;0;0;0;0;  1;0.5;0;0;0;0; 1;1.5;0;0;0;0;];
+r  = [0.6;1.2;0;0;0;0; 0.0;0.6;0;0;0;0; 0;0.6;0;0;0;0];
+x0 = [0.6;0;0;0;0;0;  1.2;0.6;0;0;0;0; 1.2;1.5;0;0;0;0;];
+
 
 % Augment the matrices for the 3 agent problem
 Q  = sparse(blkdiag(Qf,Qf,Qf));
