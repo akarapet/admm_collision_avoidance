@@ -1,3 +1,14 @@
+% *****************************************************************************
+% *                                                                           *
+% *		      Crazyflie Linearised System Formulator						  *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Creates a linearised model based on the controller.mdl         	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
 
 %define parameters
 cmd_2_newtons_conversion_quadratic_coefficient  =  1.3385e-10;

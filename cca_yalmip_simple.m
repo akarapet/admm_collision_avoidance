@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *		 Centralised Collision Avoidance with Simple Dynamics - YALMIP	      *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Centralised Optimisation Problem  for Collision Avoidance        	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 %% Initialisation
 
 
@@ -29,10 +41,7 @@ for i = 1:M
     
     x(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
     a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));
-    %r{i} = sdpvar(nu*N,1);
-    %r{i} = ones(nu*N,1)*0;
-    %x_nominal(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
-    
+ 
 end
 
 r(1,:) =[1.0,1.4];
@@ -101,9 +110,7 @@ for k = 1:N
    
     for i = 1:M
         
-        %objective = objective  + (x{i,k}(1:nu) - ref{i,k})'* Q * ...
-            %(x{i,k}(1:nu)-ref{i,k}) + a{i,k}'* R * a{i,k};
-        objective = objective  + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
+       objective = objective  + (x{i,k}(1:nu) - r(i,:)')'* Q * ...
             (x{i,k}(1:nu)-r(i,:)') + a{i,k}'* R * a{i,k};        
         
         constraints = [constraints, x{i,k+1} == A*x{i,k} + B*a{i,k}];
@@ -125,7 +132,6 @@ for k = 1:N
 end
 
     
-    %optimize([constraints, x{1,1} == x_1_0,x{2,1} == x_2_0,x{3,1} == x_3_0,x{1,N+1}(3:4) ==[0;0],x{2,N+1}(3:4) == [0;0],x{3,N+1}(3:4) == [0;0],a{1,N} == [0;0],a{2,N} == [0;0],a{3,N} == [0;0]],objective);
     optimize(constraints,objective,ops);
     
     m
@@ -144,7 +150,4 @@ for i =1:M
 end
 %% Visualisation
 
-admm_visualise (r,x,N,T);
-%admm_visualise([0.5;1.3],x,N,T);
-
-
+visualise (r,x,N,T);

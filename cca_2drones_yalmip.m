@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *		 Centralised Collision Avoidance with CF Dynamics - YALMIP	          *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Centralised Optimisation Problem  for Collision Avoidance        	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 %% Initialisation
 
 
@@ -30,16 +42,12 @@ delta = 0.4; % Inter-agent distance
 for i = 1:M
     
     x(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
-    a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));
-    %r{i} = sdpvar(nu*N,1);
-    %r{i} = ones(nu*N,1)*0;
-    %x_nominal(i,:) = sdpvar(repmat(nx,1,N+1),repmat(1,1,N+1));
-    
+    a(i,:) = sdpvar(repmat(nu,1,N),repmat(1,1,N));  
 end
 
 r(1,:) =[0,0];
 r(2,:) =[0,0];
-%r(3,:) =[0,0.5];
+
 
 % initial conditions
 
@@ -137,8 +145,4 @@ end
 
 %% Visualisation
 
-admm_visualise_2drones (r,x,N,T);
-%admm_visualise([0.5;1.3],x,N,T);
-
-
-
+visualise_2drones (r,x,N,T);

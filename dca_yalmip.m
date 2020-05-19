@@ -1,4 +1,16 @@
-  %% Initialisation
+% *****************************************************************************
+% *                                                                           *
+% *		    Distributed Collision Avoidance with CF Dynamics - YALMIP	      *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Fully Decentralise ADMM Algorithm for Collision Avoidance        	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
+%% Initialisation
 
 yalmip('clear')
 clear all
@@ -215,13 +227,9 @@ for i = 1:M
           if (i~=j)
               J_2 = J_2 + lambda_to_j{i,j,k}'*(xc{j,k}(1:nu)-w_to_j{i,j,k})+rho*0.5*(xc{j,k}(1:nu)-w_to_j{i,j,k})'*(xc{j,k}(1:nu)-w_to_j{i,j,k});
           
-%               eta_ij = (wc{i,k} - w_to_jc{i,j,k}) * 1/norm(wc{i,k} - w_to_jc{i,j,k});
-%               h_ij = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(wc{i,k} - w_to_jc{i,j,k})) - delta;
- 
               eta_ij = (xc{i,k}(1:nu) - xc{j,k}(1:nu)) * 1/norm(xc{i,k}(1:nu) - xc{j,k}(1:nu));
               h_ij = eta_ij' * ((w{i,k} - w_to_j{i,j,k})-(xc{i,k}(1:nu) - xc{j,k}(1:nu))) - delta;
                
-%              constraints_2 = [constraints_2, norm(wc{i,k} - w_to_jc{i,j,k}) + h_ij >= 0];
                constraints_2 = [constraints_2, norm(xc{i,k}(1:nu) - xc{j,k}(1:nu)) + h_ij >= 0];
           end
           
@@ -261,16 +269,17 @@ for i = 1:M
     end
 end
 
-% error
 
 
 s1 = sprintf('iteration: %d \n', m );
 disp(s1);
+
+% objective calculation
 for k = 1:N
    sum = sum + abs(value(norm(x{1,k}(1:nu) - xprev{1,k}(1:nu))));
 end
 
-s2 = sprintf('error: %d \n', sum);
+s2 = sprintf('value: %d \n', sum);
 disp(s2);
 
 for k =1:N
@@ -283,4 +292,4 @@ end
 
 %% Visualisation
 
-admm_visualise(r,x,N,T);
+visualise(r,x,N,T);

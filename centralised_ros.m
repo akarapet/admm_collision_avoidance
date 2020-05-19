@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *	                        ROS Tests	                                      *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *                                                                           *	         	                                                           
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 %% ROS Initialisation 
 clear
 clc

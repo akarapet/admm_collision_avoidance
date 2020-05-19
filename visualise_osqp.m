@@ -1,4 +1,16 @@
-function admm_visualise_osqp (r,x,N,T,nx,nu)
+% *****************************************************************************
+% *                                                                           *
+% *		          Trajectory visualiser - OSQP	                              *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	     Plots the simulated trajectories of three agents                     *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
+function visualise_osqp (r,x,N,T,nx,nu)
 
 x_1_plot = [];
 y_1_plot = [];
@@ -11,7 +23,6 @@ y_3_plot =[];
 
 M = 3;
 
-%[m n] = size(r);
     
 figure;
 
@@ -73,9 +84,6 @@ for k = 1:(N+1)
     hold off
     
     legend('off')
-    %hold on
-    
-    %plot(value(x{1,k}(1)),value(x{1,k}(2)),'b*',value(x{2,k}(1)),value(x{2,k}(2)),'b*',value(x{3,k}(1)),value(x{3,k}(2)),'b*')
 
     pause(T)
 end

@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *		 Centralised Collision Avoidance with CF Dynamics with MPC - OSQP	  *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Centralised Optimisation Problem  for Collision Avoidance        	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 clear, clc
 
 % Discrete time model of a quadcopter
@@ -118,12 +130,6 @@ res = prob.solve();
 oldobjective = res.info.obj_val;
 x = res.x(1:nx*(N+1));
 
-% kappa = 19;
-% Rnew = eye(nu/M)*kappa;
-% Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
-% Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
-% prob.update('Px',nonzeros(triu(Pnew)));
-
 % Simulate in closed loop
 nsim = 100;
 nit = 2;
@@ -133,7 +139,7 @@ ctrl_applied_2 =[]; % agent 2
 ctrl_applied_3 =[]; % agent 3
 
 for i = 1 : nsim
-    tic
+
     % the linearisation over previous solution x_bar
     for it = 1:nit
         
@@ -150,16 +156,18 @@ for i = 1 : nsim
         u_new = [ueq;upper_inf;max_input];
         prob.update('l',l_new,'u',u_new);
                  
-         res = prob.solve();
-%         it
-%         if (abs(oldobjective-res.info.obj_val) < abs(oldobjective*0.005))
-%             break
-%         end
-%         oldobjective = res.info.obj_val;
-%         
+        res = prob.solve();
+        
+        %  for termination with epsilon
+        %         it
+        %         if (abs(oldobjective-res.info.obj_val) < abs(oldobjective*0.005))
+        %             break
+        %         end
+        %         oldobjective = res.info.obj_val;
+        %
         x = res.x(1:nx*(N+1));
     end
-    toc
+
     % Apply first control input to the plant
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
     x0 = Ad*x0 + Bd*ctrl;
@@ -178,13 +186,13 @@ for i = 1 : nsim
 end
 
 % Write to text file to be read by Python for OL Control
-dlmwrite('testinputs1.txt',ctrl_applied_1);
-dlmwrite('testinputs2.txt',ctrl_applied_2);
-dlmwrite('testinputs3.txt',ctrl_applied_3);
+% dlmwrite('testinputs1.txt',ctrl_applied_1);
+% dlmwrite('testinputs2.txt',ctrl_applied_2);
+% dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
-%admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
-admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+%visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
+visualise_osqp(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 
 % objective calculation

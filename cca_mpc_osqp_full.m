@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *		 Centralised Collision Avoidance with CF Dynamics with MPC - OSQP	  *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Centralised Optimisation Problem  for Collision Avoidance        	      *
+% *                          (Full Model)                                     *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 clear, clc
 
 % Discrete time model of a quadcopter
@@ -131,12 +143,6 @@ prob.setup(P, q, A, l, u,'warm_start', true,'verbose',true);
 res = prob.solve();
 x = res.x(1:nx*(N+1));
 
-% kappa = 19;
-% Rnew = eye(nu/M)*kappa;
-% Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
-% Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
-% prob.update('Px',nonzeros(triu(Pnew)));
-
 % Simulate in closed loop
 nsim = 100;
 nit = 2;
@@ -191,8 +197,8 @@ dlmwrite('testinputs2.txt',ctrl_applied_2);
 dlmwrite('testinputs3.txt',ctrl_applied_3);
 
 %Visualise
-%admm_visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
-admm_visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+%visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
+visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta,st_M)
     

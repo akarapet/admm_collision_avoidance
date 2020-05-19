@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *		    Distributed Collision Avoidance with CF Dynamics - OSQP  	      *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Fully Decentralise ADMM Algorithm for Collision Avoidance        	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 clear, clc
 
 % Discrete time model of a quadcopter
@@ -20,7 +32,7 @@ nu = 2;
 
 % MPC data
 
-N = 10;
+N = 100;
 
 Q = eye(nu)*10;
 Q = blkdiag(Q,eye(nu)*10);
@@ -71,6 +83,7 @@ d = [eye(2),zeros(nu,nx-nu)]; % Matrix to take only position from the state vect
 posMN = kron(eye(N+1),d);
 
 rhoM = kron(speye((N+1)),rho/2*eye(2)); % matrix for the quadratic objective formualation
+
 % Transformation matrix H creation
 
 kron_mat = -1*eye(2);
@@ -86,8 +99,6 @@ for i = 1:(M-1)
     Hw = [Hw,H_Mw];
 end
 
-%H = [kron(eye(N+1),repmat(d, 2, 1)),kron(eye(N+1),kron(kron_mat,d)) ];
-%Hw = [kron(eye(N+1),repmat(eye(2), 2, 1)),kron(eye(N+1),kron(kron_mat,eye(2)))];
 
 % get the indices of non-zero values in new A_ineq
 eta_part = diag(ones(N, 1), 1);
@@ -113,9 +124,7 @@ Aeq = [Aeq;zeros(N*nu,(N+1)*nx),eye(N*nu)];
 % quadratic objective for coordination
 
 Pc = rhoM;
-% for i = 1:(M-1)
-%     Pc = blkdiag(Pc,1*rhoM);
-% end
+
 Pc = kron(eye(M),rhoM);
 %% Setup 
 
@@ -124,7 +133,6 @@ Pc = kron(eye(M),rhoM);
 for i = 1:M
     
     %- linear objective for prediction
-    %q(:,i) = prediction_linear(lambda(:,i),lambda_from_j{i},w(:,i),w_from_j{i},rho,r(i,:)',Q,QN,N,nu,M,posMN);
     q(:,i) = [repmat(-Q*r(i,:)', N, 1); -QN*r(i,:)'; zeros(N*nu, 1)];
     
     % input constraints
@@ -150,7 +158,7 @@ for i = 1:M
     % Initial solution
     res(:,i) = prob(i).solve();
     x(:,i) = res(:,i).x(1:nx*(N+1));
-    %w(:,i) = res(:,i).x(1:2*(N+1));   
+   
 end
 
 % Coordination
@@ -173,7 +181,7 @@ for i = 1:M
 end
 
 %% Algorithm
-tic
+
 for nit = 1:45
     
     %% Prediction
@@ -193,7 +201,7 @@ for nit = 1:45
         
         % Update matrices
         [A_ineq{i},l_ineq(:,i)] = communicate(i,x,N,N_j(i,:),M,H,Hw,delta,nu);
-        %coord(i).setup(Pc,qc(:,i),A_ineq{i},l_ineq(:,i),u_ineq,'warm_start', true,'verbose',true);
+
         coord(i).update('Ax',A_ineq{i}(idx));
         coord(i).update('q',qc(:,i),'l',l_ineq(:,i),'u',u_ineq);
         
@@ -225,7 +233,7 @@ for nit = 1:45
      end
     
  end
-toc
+
 %% Visualise
 
 g = r';
@@ -233,12 +241,13 @@ xconcat =[];
 wconcat = [];
 for k = 1:N+1
     for i = 1:M
-        
+        %xconcat = [xconcat;x((k-1)*nx+1:k*nx,i)];
         xconcat = [xconcat;x((k-1)*nx+1:k*nx,i)];
-        wconcat = [wconcat;w((k-1)*2+1:k*2,i);zeros(4,1)];
+        %wconcat = [wconcat;w((k-1)*2+1:k*2,i);zeros(4,1)];
     end
 end
-%admm_visualise_osqp (g(:),xconcat,N,T,nx,nu)
+
+visualise_osqp (g(:),xconcat,N,T,nx,nu)
 
 % objective calculation
 sum = 0;

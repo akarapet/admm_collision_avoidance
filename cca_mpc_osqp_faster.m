@@ -1,3 +1,15 @@
+% *****************************************************************************
+% *                                                                           *
+% *		 Centralised Collision Avoidance with CF Dynamics with MPC - OSQP	  *
+% *				Aren Karapetyan (c) 19/05/2020							      *
+% *	  Centralised Optimisation Problem  for Collision Avoidance        	      *
+% *                                                                           *
+% *****************************************************************************
+% *                                                                           *
+% *   Fourth Year Project at Engineering Science, University of Oxford        *
+% *        Distributed Control of Flying Quadrotors                           *
+% *****************************************************************************
+
 clear, clc
 
 % Discrete time model of a quadcopter
@@ -114,12 +126,6 @@ prob.setup(P, q, A, l, u,'warm_start', true,'verbose',false);
 res = prob.solve();
 x = res.x(1:nx*(N+1));
 
-% kappa = 19;
-% Rnew = eye(nu/M)*kappa;
-% Rnew  = sparse(blkdiag(Rnew,Rnew,Rnew));
-% Pnew = blkdiag( kron(speye(N), Q), QN, kron(speye(N), Rnew) );
-% prob.update('Px',nonzeros(triu(Pnew)));
-
 % Simulate in closed loop
 nsim = 200;
 nit = 2;
@@ -127,7 +133,7 @@ implementedX = x0; % a variable for storing the states for simulation
 ctrl_applied =[]; % agent 1
 ctrl_prev = zeros(6,1);
 for i = 1 : nsim
-    tic
+    
     % the linearisation over previous solution x_bar
     for it = 1:nit
         
@@ -151,7 +157,7 @@ for i = 1 : nsim
     
     % Apply first control input to the plant
     ctrl = res.x((N+1)*nx+1:(N+1)*nx+nu);
-    toc
+    
     x0 = Ad*x0 + Bd*ctrl_prev;
     ctrl_prev = ctrl;
     % SEND INPUT TO RUNNING PYTHON CODE VIA ROS TO BE APPLIED TO CF
@@ -171,8 +177,8 @@ end
 dlmwrite('testinputs.txt',ctrl_applied);
 
 %Visualise
-%admm_visualise_osqp (r,res.x,N,T) % for non-mpc
-admm_visualise_osqp (r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+%visualise_osqp (r,res.x,N,T) % for non-mpc
+visualise_osqp (r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 function [A_ineq,l_ineq] = eta_maker (delta_x_bar,N,M,nu,nx,diff_matrix,delta)
     
