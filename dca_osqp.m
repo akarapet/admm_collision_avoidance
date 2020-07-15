@@ -75,7 +75,7 @@ x = repmat(x, N+1, 3);
 r = [1.0,1.4,0,0,0,0; 0.6,0.4,0,0,0,0; 0,0.9,0,0,0,0];
 x0 = [0,0.5,0,0,0,0;  0.2,0.9,0,0,0,0; 1.0,0.3,0,0,0,0;];
 
-delta = 0.35; % Inter-agent distance
+delta = 0.0; % Inter-agent distance
 
 %% Useful Matrices
 posM = blkdiag(eye(2),zeros(4,4)); % Matrix to take only position from the state vector x

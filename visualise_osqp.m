@@ -45,8 +45,8 @@ for k = 1:(N+1)
             col = 'magenta';
             a = 'mx';
         end
-        xlim([-0.2 1.4]) 
-        ylim([-0.2 1.6])        
+        xlim([-0.2 1.2]) 
+        ylim([0.2 1.6])        
         px = plot(r(1+(i-1)*nx),r((i-1)*nx+nu),a,'MarkerSize',13);
         set(px(1), 'color', col);
         hold on
@@ -58,6 +58,7 @@ for k = 1:(N+1)
    
     po = plot(x(1),x(2),'o',x(nx+1),x(nx+2),'bo',x(nx*2+1),x(nx*2+2),'ro');
     set(po(1), 'color', '#228B22');
+    set(po,'MarkerSize',13);
     
     hold on
     
@@ -76,11 +77,13 @@ for k = 1:(N+1)
     set(p(1), 'color', '#228B22');
     set(p(2), 'color', 'blue');
     set(p(3), 'color', 'red');
+    set(p,'LineWidth',2);
     hold on
     
     
     ps = plot(x(1+(k-1)*M*nx),x(nu+(k-1)*M*nx),'g*',x(nx+1+(k-1)*M*nx),x(nx+nu+(k-1)*M*nx),'b*',x(2*nx+1+(k-1)*M*nx),x(2*nx+nu+(k-1)*M*nx),'r*');
     set(ps(1), 'color', '#228B22');
+    set(ps,'MarkerSize',10)
     hold off
     
     legend('off')

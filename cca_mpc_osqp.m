@@ -14,7 +14,7 @@ clear, clc
 
 % Discrete time model of a quadcopter
 % Obtained from formulate_system for T = 0.1
-A = [1 0 0.09629 0 0 0.03962;
+A =     [1 0 0.09629 0 0 0.03962;
          0 1 0 0.09629 -0.03962 0;
          0 0 0.8943 0 0 0.7027;
          0 0 0 0.8943 -0.7027 0;
@@ -56,7 +56,7 @@ Q  = sparse(blkdiag(Qf,Qf,Qf));
 R  = sparse(blkdiag(R,R,R));
 QN = sparse(blkdiag(QN,QN,QN));
 
-delta = 0.33; % Inter-agent distance 
+delta = 0.45; % Inter-agent distance 
 
 % Transformation matrix V creation
 d = [eye(2),zeros(nu/M,nx/M-nu/M)];
@@ -192,7 +192,7 @@ end
 
 %Visualise
 %visualise_osqp (r,res.x,N,T,nx/M,nu/M) % for non-mpc
-visualise_osqp(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
+visualise_osqp_CF(r,implementedX,nsim,T,nx/M,nu/M) % for mpc
 
 
 % objective calculation

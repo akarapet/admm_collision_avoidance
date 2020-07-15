@@ -87,11 +87,24 @@ CL_sys = connect(G_sys,K_sys,Sum,'r','y');
 %discretize the system
 CL_sysd = c2d(CL_sys,0.1);
 
+
+% Transfer functions
 TF = minreal(zpk(CL_sys));
 
 tf_xdot_x = TF(1,4);
 tf_ydot_y = TF(2,5);
 tf_yaw_yaw = TF (9,9);
+
+% reducing the model to have the states [position, velocity, roll and pitch
+% angles] and inputs [x ref velocity, y ref velocity] to be used for
+% distributed control and ADMM
+
+% reduced A matrix
+A_r = CL_sysd.A([1,2,4,5,7,8],[1,2,4,5,7,8]);
+
+% reduced B matrix
+B_r = CL_sysd.B([1,2,4,5,7,8],[4,5]);
+
 
 
 
